@@ -16,9 +16,9 @@ export default function RegisterScreen() {
       email: email,
       password: password,
       options: {
+        // El rol NO se envía desde el cliente: el trigger de la base siempre asigna 'student'
         data: {
           full_name: name,
-          role: 'student', // Rol por defecto para nuevos usuarios
         },
       },
     });
