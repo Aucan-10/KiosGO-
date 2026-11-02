@@ -4,13 +4,23 @@ import { useEffect, ReactNode } from 'react';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CartProvider } from '../context/CartContext';
+import { useColors } from '../lib/theme';
 
 export default function RootLayout() {
+  const colors = useColors();
   return (
     <AuthProvider>
       <CartProvider>
         <AuthGate>
-          <Stack screenOptions={{ headerShown: true }} />
+          <Stack
+            screenOptions={{
+              headerShown: true,
+              // La barra superior sigue el modo claro/oscuro
+              headerStyle: { backgroundColor: colors.surface },
+              headerTintColor: colors.text,
+              headerTitleStyle: { color: colors.text },
+            }}
+          />
         </AuthGate>
         <StatusBar style="auto" />
       </CartProvider>
@@ -27,10 +37,13 @@ function AuthGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (loading || !navState?.key) return;
-    const onAuthScreen = segments[0] === 'login' || segments[0] === 'register';
-    if (!session && !onAuthScreen) {
+    const first = segments[0] as string | undefined;
+    const isAuthScreen = first === 'login' || first === 'register';
+    // Recuperar contraseña debe poder abrirse sin sesión
+    const isPublicScreen = isAuthScreen || first === 'forgot-password' || first === 'reset-password';
+    if (!session && !isPublicScreen) {
       router.replace('/login');
-    } else if (session && onAuthScreen) {
+    } else if (session && isAuthScreen) {
       router.replace('/');
     }
   }, [loading, session, segments, navState?.key]);

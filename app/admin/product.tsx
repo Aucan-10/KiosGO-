@@ -1,8 +1,9 @@
-import { useEffect, useState, ReactNode } from 'react';
+import { useEffect, useMemo, useState, ReactNode } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Switch, ScrollView } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
+import { Colors, useColors } from '../../lib/theme';
 
 type FormState = {
   name: string;
@@ -21,6 +22,8 @@ export default function ProductFormScreen() {
   const isNew = id === 'nuevo';
   const router = useRouter();
   const { isAdmin } = useAuth();
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [loading, setLoading] = useState(!isNew);
@@ -111,7 +114,7 @@ export default function ProductFormScreen() {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ title: 'Producto' }} />
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -120,11 +123,11 @@ export default function ProductFormScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Stack.Screen options={{ title: isNew ? 'Nuevo producto' : 'Editar producto' }} />
 
-      <Field label="Nombre *" error={errors.name}>
+      <Field label="Nombre *" error={errors.name} styles={styles}>
         <TextInput style={styles.input} value={form.name} onChangeText={(v) => setForm({ ...form, name: v })} />
       </Field>
 
-      <Field label="Descripción">
+      <Field label="Descripción" styles={styles}>
         <TextInput
           style={[styles.input, styles.multiline]}
           value={form.description}
@@ -133,7 +136,7 @@ export default function ProductFormScreen() {
         />
       </Field>
 
-      <Field label="Precio *" error={errors.price}>
+      <Field label="Precio *" error={errors.price} styles={styles}>
         <TextInput
           style={styles.input}
           value={form.price}
@@ -142,7 +145,7 @@ export default function ProductFormScreen() {
         />
       </Field>
 
-      <Field label="Stock *" error={errors.stock}>
+      <Field label="Stock *" error={errors.stock} styles={styles}>
         <TextInput
           style={styles.input}
           value={form.stock}
@@ -151,7 +154,7 @@ export default function ProductFormScreen() {
         />
       </Field>
 
-      <Field label="URL de la imagen" error={errors.image_url}>
+      <Field label="URL de la imagen" error={errors.image_url} styles={styles}>
         <TextInput
           style={styles.input}
           value={form.image_url}
@@ -173,7 +176,19 @@ export default function ProductFormScreen() {
   );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: ReactNode }) {
+type Styles = ReturnType<typeof makeStyles>;
+
+function Field({
+  label,
+  error,
+  children,
+  styles,
+}: {
+  label: string;
+  error?: string;
+  children: ReactNode;
+  styles: Styles;
+}) {
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -183,18 +198,24 @@ function Field({ label, error, children }: { label: string; error?: string; chil
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  content: { padding: 20, paddingBottom: 40 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  noPerms: { color: '#888', fontSize: 16, textAlign: 'center' },
-  field: { marginBottom: 14 },
-  label: { fontSize: 14, fontWeight: '600', marginBottom: 6, color: '#222' },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, borderRadius: 10, fontSize: 16 },
-  multiline: { minHeight: 80, textAlignVertical: 'top' },
-  error: { color: '#FF3B30', marginTop: 4, fontSize: 13 },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  saveButton: { backgroundColor: '#34C759', padding: 15, borderRadius: 10, alignItems: 'center' },
-  saveButtonDisabled: { backgroundColor: '#9ADBA8' },
-  saveText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.surface },
+    content: { padding: 20, paddingBottom: 40 },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: c.surface },
+    noPerms: { color: c.textFaint, fontSize: 16, textAlign: 'center' },
+    field: { marginBottom: 14 },
+    label: { fontSize: 14, fontWeight: '600', marginBottom: 6, color: c.text },
+    input: { borderWidth: 1, borderColor: c.inputBorder, padding: 12, borderRadius: 10, fontSize: 16, color: c.text },
+    multiline: { minHeight: 80, textAlignVertical: 'top' },
+    error: { color: c.danger, marginTop: 4, fontSize: 13 },
+    switchRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    saveButton: { backgroundColor: c.success, padding: 15, borderRadius: 10, alignItems: 'center' },
+    saveButtonDisabled: { backgroundColor: c.greenDisabled },
+    saveText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  });

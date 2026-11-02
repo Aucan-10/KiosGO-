@@ -140,6 +140,24 @@ BEGIN
 END;
 $$;
 
+-- Devuelve el stock cuando un pedido pasa a 'cancelled' (solo en la transición, para no devolver dos veces).
+CREATE OR REPLACE FUNCTION public.devolver_stock_al_cancelar()
+RETURNS TRIGGER
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF new.status = 'cancelled' AND old.status IS DISTINCT FROM 'cancelled' THEN
+    UPDATE public.products p
+       SET stock = p.stock + oi.quantity
+      FROM public.order_items oi
+     WHERE oi.order_id = new.id
+       AND oi.product_id = p.id;
+  END IF;
+  RETURN new;
+END;
+$$;
+
 
 -- -------------------------------------------------------------
 -- 3. TRIGGER: perfil automático al registrarse
@@ -149,6 +167,12 @@ DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Trigger: devolver stock al cancelar un pedido
+DROP TRIGGER IF EXISTS trg_devolver_stock_al_cancelar ON public.orders;
+CREATE TRIGGER trg_devolver_stock_al_cancelar
+  AFTER UPDATE OF status ON public.orders
+  FOR EACH ROW EXECUTE FUNCTION public.devolver_stock_al_cancelar();
 
 
 -- -------------------------------------------------------------

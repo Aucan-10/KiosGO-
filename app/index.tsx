@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { supabase } from '../lib/supabase';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { Product, formatPrice } from '../lib/types';
+import { Colors, useColors } from '../lib/theme';
 
 export default function HomeScreen() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -22,6 +23,8 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const { addToCart, getQuantity, itemCount, total } = useCart();
   const { profile, isAdmin, signOut } = useAuth();
   const router = useRouter();
@@ -110,7 +113,7 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text style={styles.loadingText}>Cargando menú...</Text>
       </View>
     );
@@ -139,10 +142,11 @@ export default function HomeScreen() {
           </View>
         )}
         <View style={styles.navRow}>
-          <NavButton label="Mis pedidos" onPress={() => router.push('/orders')} />
-          {isAdmin && <NavButton label="Pedidos (admin)" onPress={() => router.push('/admin/orders')} />}
-          {isAdmin && <NavButton label="Productos (admin)" onPress={() => router.push('/admin/products')} />}
-          <NavButton label="Cerrar sesión" onPress={handleSignOut} danger />
+          <NavButton label="Mis pedidos" onPress={() => router.push('/orders')} styles={styles} />
+          <NavButton label="Mi cuenta" onPress={() => router.push('/account')} styles={styles} />
+          {isAdmin && <NavButton label="Pedidos (admin)" onPress={() => router.push('/admin/orders')} styles={styles} />}
+          {isAdmin && <NavButton label="Productos (admin)" onPress={() => router.push('/admin/products')} styles={styles} />}
+          <NavButton label="Cerrar sesión" onPress={handleSignOut} danger styles={styles} />
         </View>
       </View>
 
@@ -168,7 +172,19 @@ export default function HomeScreen() {
   );
 }
 
-function NavButton({ label, onPress, danger }: { label: string; onPress: () => void; danger?: boolean }) {
+type Styles = ReturnType<typeof makeStyles>;
+
+function NavButton({
+  label,
+  onPress,
+  danger,
+  styles,
+}: {
+  label: string;
+  onPress: () => void;
+  danger?: boolean;
+  styles: Styles;
+}) {
   return (
     <TouchableOpacity style={[styles.navButton, danger && styles.navButtonDanger]} onPress={onPress}>
       <Text style={[styles.navButtonText, danger && styles.navButtonTextDanger]}>{label}</Text>
@@ -176,35 +192,43 @@ function NavButton({ label, onPress, danger }: { label: string; onPress: () => v
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 10, color: '#555' },
-  headerButton: { paddingHorizontal: 8, paddingVertical: 4 },
-  headerButtonText: { color: '#007AFF', fontWeight: '600' },
-  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee' },
-  greeting: { fontSize: 18, fontWeight: 'bold', marginBottom: 8 },
-  cartSummary: { backgroundColor: '#E8F5E9', padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 },
-  cartText: { color: '#2E7D32', fontWeight: 'bold', fontSize: 15 },
-  navRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  navButton: { backgroundColor: '#E5F0FF', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  navButtonDanger: { backgroundColor: '#FFE5E3' },
-  navButtonText: { color: '#007AFF', fontWeight: '600', fontSize: 13 },
-  navButtonTextDanger: { color: '#FF3B30' },
-  list: { padding: 16 },
-  card: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 12, marginBottom: 16, overflow: 'hidden', elevation: 3 },
-  image: { width: 100, height: 110 },
-  imagePlaceholder: { backgroundColor: '#eee', justifyContent: 'center', alignItems: 'center' },
-  imagePlaceholderText: { color: '#888', fontSize: 12 },
-  cardContent: { flex: 1, padding: 12, justifyContent: 'space-between' },
-  title: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
-  description: { fontSize: 12, color: '#666', marginBottom: 6 },
-  stock: { fontSize: 12, color: '#555', marginBottom: 6 },
-  stockEmpty: { color: '#FF3B30', fontWeight: '600' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  price: { fontSize: 18, fontWeight: 'bold', color: '#34C759' },
-  addButton: { backgroundColor: '#007AFF', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  addButtonDisabled: { backgroundColor: '#B0B0B0' },
-  addButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
-  empty: { textAlign: 'center', marginTop: 40, color: '#888', fontSize: 16, paddingHorizontal: 20 },
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: c.background },
+    loadingText: { marginTop: 10, color: c.textMuted },
+    headerButton: { paddingHorizontal: 8, paddingVertical: 4 },
+    headerButtonText: { color: c.primary, fontWeight: '600' },
+    header: { padding: 16, backgroundColor: c.surface, borderBottomWidth: 1, borderBottomColor: c.border },
+    greeting: { fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: c.text },
+    cartSummary: { backgroundColor: c.successSoft, padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 },
+    cartText: { color: c.successText, fontWeight: 'bold', fontSize: 15 },
+    navRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    navButton: { backgroundColor: c.primarySoft, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+    navButtonDanger: { backgroundColor: c.dangerSoft },
+    navButtonText: { color: c.primary, fontWeight: '600', fontSize: 13 },
+    navButtonTextDanger: { color: c.danger },
+    list: { padding: 16 },
+    card: {
+      flexDirection: 'row',
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      marginBottom: 16,
+      overflow: 'hidden',
+      elevation: 3,
+    },
+    image: { width: 100, height: 110 },
+    imagePlaceholder: { backgroundColor: c.placeholderBg, justifyContent: 'center', alignItems: 'center' },
+    imagePlaceholderText: { color: c.textFaint, fontSize: 12 },
+    cardContent: { flex: 1, padding: 12, justifyContent: 'space-between' },
+    title: { fontSize: 16, fontWeight: 'bold', marginBottom: 4, color: c.text },
+    description: { fontSize: 12, color: c.textMuted, marginBottom: 6 },
+    stock: { fontSize: 12, color: c.textMuted, marginBottom: 6 },
+    stockEmpty: { color: c.danger, fontWeight: '600' },
+    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    price: { fontSize: 18, fontWeight: 'bold', color: c.success },
+    addButton: { backgroundColor: c.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+    addButtonDisabled: { backgroundColor: c.primaryDisabled },
+    addButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+    empty: { textAlign: 'center', marginTop: 40, color: c.textFaint, fontSize: 16, paddingHorizontal: 20 },
+  });

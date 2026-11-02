@@ -1,15 +1,18 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, Switch, Alert } from 'react-native';
 import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Product, formatPrice } from '../../lib/types';
+import { Colors, useColors } from '../../lib/theme';
 
 export default function AdminProductsScreen() {
   const { isAdmin } = useAuth();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   // Admin ve todos los productos (activos e inactivos) gracias a RLS
   const fetchProducts = useCallback(async () => {
@@ -47,7 +50,7 @@ export default function AdminProductsScreen() {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ title: 'Productos' }} />
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -102,15 +105,24 @@ export default function AdminProductsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  list: { padding: 16 },
-  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 12, elevation: 2 },
-  info: { flex: 1, marginRight: 8 },
-  name: { fontWeight: 'bold', fontSize: 15, marginBottom: 2 },
-  meta: { color: '#555', fontSize: 13 },
-  inactive: { color: '#FF3B30' },
-  newButton: { color: '#007AFF', fontWeight: '600', fontSize: 15 },
-  empty: { textAlign: 'center', marginTop: 40, color: '#888', fontSize: 16 },
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: c.background },
+    list: { padding: 16 },
+    card: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 12,
+      elevation: 2,
+    },
+    info: { flex: 1, marginRight: 8 },
+    name: { fontWeight: 'bold', fontSize: 15, marginBottom: 2, color: c.text },
+    meta: { color: c.textMuted, fontSize: 13 },
+    inactive: { color: c.danger },
+    newButton: { color: c.primary, fontWeight: '600', fontSize: 15 },
+    empty: { textAlign: 'center', marginTop: 40, color: c.textFaint, fontSize: 16 },
+  });

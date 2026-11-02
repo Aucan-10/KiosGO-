@@ -15,5 +15,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+    // PKCE: el enlace de recuperación llega con ?code=, que se canjea por sesión en reset-password
+    flowType: 'pkce',
   },
 });

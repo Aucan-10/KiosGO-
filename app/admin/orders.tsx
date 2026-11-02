@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
 import { supabase } from '../../lib/supabase';
@@ -12,6 +12,7 @@ import {
   formatPrice,
   statusStyle,
 } from '../../lib/types';
+import { Colors, useColors } from '../../lib/theme';
 
 export default function AdminOrdersScreen() {
   const { isAdmin } = useAuth();
@@ -20,6 +21,8 @@ export default function AdminOrdersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const fetchOrders = useCallback(async () => {
     setError(null);
@@ -61,7 +64,7 @@ export default function AdminOrdersScreen() {
 
   function confirmChange(order: OrderRow, next: OrderStatus) {
     if (next === 'cancelled') {
-      Alert.alert('Cancelar pedido', '¿Seguro que querés cancelar este pedido? El stock no se devuelve automáticamente.', [
+      Alert.alert('Cancelar pedido', '¿Seguro que querés cancelar este pedido? Se devolverá el stock de los productos.', [
         { text: 'No', style: 'cancel' },
         { text: 'Sí, cancelar', style: 'destructive', onPress: () => changeStatus(order, next) },
       ]);
@@ -83,7 +86,7 @@ export default function AdminOrdersScreen() {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ title: 'Pedidos' }} />
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -94,7 +97,7 @@ export default function AdminOrdersScreen() {
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.customer}>{item.profiles?.full_name || item.profiles?.email || 'Alumno'}</Text>
-          <Text style={[styles.status, statusStyle(item.status)]}>{STATUS_LABELS[item.status]}</Text>
+          <Text style={[styles.status, statusStyle(item.status, colors)]}>{STATUS_LABELS[item.status]}</Text>
         </View>
         <Text style={styles.date}>{formatDate(item.created_at)}</Text>
         {item.order_items.map((line, index) => (
@@ -107,7 +110,7 @@ export default function AdminOrdersScreen() {
         {nextStatuses.length > 0 && (
           <View style={styles.actions}>
             {updatingId === item.id ? (
-              <ActivityIndicator color="#007AFF" />
+              <ActivityIndicator color={colors.primary} />
             ) : (
               nextStatuses.map((next) => (
                 <TouchableOpacity
@@ -150,21 +153,29 @@ export default function AdminOrdersScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  list: { padding: 16 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 12, elevation: 2 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-  customer: { fontWeight: 'bold', fontSize: 15, flexShrink: 1 },
-  status: { fontWeight: 'bold', fontSize: 13 },
-  date: { color: '#666', fontSize: 12, marginBottom: 6 },
-  line: { fontSize: 14, marginBottom: 2 },
-  total: { marginTop: 6, fontWeight: 'bold', textAlign: 'right' },
-  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, minHeight: 36, alignItems: 'center' },
-  actionButton: { backgroundColor: '#007AFF', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  actionDanger: { backgroundColor: '#FFE5E3' },
-  actionText: { color: '#fff', fontWeight: '600', fontSize: 13 },
-  actionTextDanger: { color: '#FF3B30' },
-  empty: { textAlign: 'center', marginTop: 40, color: '#888', fontSize: 16 },
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: c.background },
+    list: { padding: 16 },
+    card: { backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 12, elevation: 2 },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    customer: { fontWeight: 'bold', fontSize: 15, flexShrink: 1, color: c.text },
+    status: { fontWeight: 'bold', fontSize: 13 },
+    date: { color: c.textMuted, fontSize: 12, marginBottom: 6 },
+    line: { fontSize: 14, marginBottom: 2, color: c.text },
+    total: { marginTop: 6, fontWeight: 'bold', textAlign: 'right', color: c.text },
+    actions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 8,
+      marginTop: 10,
+      minHeight: 36,
+      alignItems: 'center',
+    },
+    actionButton: { backgroundColor: c.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
+    actionDanger: { backgroundColor: c.dangerSoft },
+    actionText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+    actionTextDanger: { color: c.danger },
+    empty: { textAlign: 'center', marginTop: 40, color: c.textFaint, fontSize: 16 },
+  });

@@ -16,6 +16,7 @@ type AuthContextType = {
   loading: boolean;
   isAdmin: boolean;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,9 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   }
 
+  // Vuelve a leer el perfil (por ejemplo, después de cambiar el nombre)
+  async function refreshProfile() {
+    if (session) await loadProfile(session.user.id);
+  }
+
   return (
     <AuthContext.Provider
-      value={{ session, profile, loading, isAdmin: profile?.role === 'admin', signOut }}
+      value={{ session, profile, loading, isAdmin: profile?.role === 'admin', signOut, refreshProfile }}
     >
       {children}
     </AuthContext.Provider>

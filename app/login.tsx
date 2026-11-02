@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useRouter } from 'expo-router';
+import { Colors, useColors } from '../lib/theme';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   async function signInWithEmail() {
     setLoading(true);
@@ -37,6 +40,7 @@ export default function LoginScreen() {
 
       <TextInput
         placeholder="Email"
+        placeholderTextColor={colors.textFaint}
         value={email}
         onChangeText={setEmail}
         style={styles.input}
@@ -46,6 +50,7 @@ export default function LoginScreen() {
 
       <TextInput
         placeholder="Contraseña"
+        placeholderTextColor={colors.textFaint}
         value={password}
         onChangeText={setPassword}
         style={styles.input}
@@ -56,6 +61,10 @@ export default function LoginScreen() {
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Ingresar</Text>}
       </TouchableOpacity>
 
+      <TouchableOpacity onPress={() => router.push('/forgot-password')}>
+        <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity onPress={() => router.push('/register')}>
         <Text style={styles.linkText}>¿No tienes cuenta? Regístrate</Text>
       </TouchableOpacity>
@@ -63,12 +72,21 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
-  subtitle: { fontSize: 16, textAlign: 'center', color: '#666', marginBottom: 30 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 15, borderRadius: 10, marginBottom: 15, fontSize: 16 },
-  button: { backgroundColor: '#007AFF', padding: 15, borderRadius: 10, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  linkText: { color: '#007AFF', textAlign: 'center', marginTop: 20, fontSize: 16 }
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: c.surface },
+    title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 10, color: c.text },
+    subtitle: { fontSize: 16, textAlign: 'center', color: c.textMuted, marginBottom: 30 },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      padding: 15,
+      borderRadius: 10,
+      marginBottom: 15,
+      fontSize: 16,
+      color: c.text,
+    },
+    button: { backgroundColor: c.primary, padding: 15, borderRadius: 10, alignItems: 'center' },
+    buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    linkText: { color: c.primary, textAlign: 'center', marginTop: 20, fontSize: 16 },
+  });

@@ -1,3 +1,5 @@
+import type { Colors } from './theme';
+
 export type Role = 'student' | 'admin';
 
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
@@ -44,15 +46,15 @@ export type OrderRow = {
   order_items: OrderItemRow[];
 };
 
-export function statusStyle(status: OrderStatus): { color: string } {
+export function statusStyle(status: OrderStatus, colors: Colors): { color: string } {
   switch (status) {
     case 'ready':
     case 'delivered':
-      return { color: '#2E7D32' };
+      return { color: colors.successText };
     case 'cancelled':
-      return { color: '#FF3B30' };
+      return { color: colors.danger };
     default:
-      return { color: '#B26A00' };
+      return { color: colors.warning };
   }
 }
 

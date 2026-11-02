@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, FlatList, Image, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { useCart, CartItem } from '../context/CartContext';
 import { formatPrice } from '../lib/types';
+import { Colors, useColors } from '../lib/theme';
 
 export default function CartScreen() {
   const { items, changeQuantity, removeFromCart, clearCart, total } = useCart();
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
+  const colors = useColors();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   // El servidor valida stock y precios; el carrito solo envía id y cantidad
   async function reserveOrder() {
@@ -109,31 +112,46 @@ export default function CartScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  emptyText: { fontSize: 16, color: '#666', marginBottom: 16 },
-  list: { padding: 16 },
-  card: { flexDirection: 'row', backgroundColor: '#fff', borderRadius: 12, marginBottom: 12, padding: 10, alignItems: 'center' },
-  image: { width: 70, height: 70, borderRadius: 8 },
-  imagePlaceholder: { backgroundColor: '#eee' },
-  info: { flex: 1, marginLeft: 12 },
-  name: { fontSize: 15, fontWeight: 'bold' },
-  unitPrice: { fontSize: 12, color: '#666', marginTop: 2 },
-  qtyRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  qtyButton: { backgroundColor: '#007AFF', width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
-  qtyButtonDisabled: { backgroundColor: '#B0B0B0' },
-  qtyButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold', lineHeight: 20 },
-  qty: { marginHorizontal: 12, fontSize: 16, fontWeight: '600' },
-  remove: { color: '#FF3B30', marginTop: 6, fontSize: 13 },
-  lineTotal: { fontWeight: 'bold', fontSize: 15, marginLeft: 8 },
-  footer: { padding: 16, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#eee' },
-  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
-  totalLabel: { fontSize: 18, fontWeight: 'bold' },
-  totalValue: { fontSize: 18, fontWeight: 'bold', color: '#34C759' },
-  primaryButton: { backgroundColor: '#007AFF', padding: 15, borderRadius: 10, alignItems: 'center' },
-  primaryButtonDisabled: { backgroundColor: '#8DBEFF' },
-  primaryButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  secondaryButton: { backgroundColor: '#E5F0FF', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
-  secondaryButtonText: { color: '#007AFF', fontWeight: '600' },
-});
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.background },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+    emptyText: { fontSize: 16, color: c.textMuted, marginBottom: 16 },
+    list: { padding: 16 },
+    card: {
+      flexDirection: 'row',
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      marginBottom: 12,
+      padding: 10,
+      alignItems: 'center',
+    },
+    image: { width: 70, height: 70, borderRadius: 8 },
+    imagePlaceholder: { backgroundColor: c.placeholderBg },
+    info: { flex: 1, marginLeft: 12 },
+    name: { fontSize: 15, fontWeight: 'bold', color: c.text },
+    unitPrice: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+    qtyRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+    qtyButton: {
+      backgroundColor: c.primary,
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    qtyButtonDisabled: { backgroundColor: c.primaryDisabled },
+    qtyButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold', lineHeight: 20 },
+    qty: { marginHorizontal: 12, fontSize: 16, fontWeight: '600', color: c.text },
+    remove: { color: c.danger, marginTop: 6, fontSize: 13 },
+    lineTotal: { fontWeight: 'bold', fontSize: 15, marginLeft: 8, color: c.text },
+    footer: { padding: 16, backgroundColor: c.surface, borderTopWidth: 1, borderTopColor: c.border },
+    totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+    totalLabel: { fontSize: 18, fontWeight: 'bold', color: c.text },
+    totalValue: { fontSize: 18, fontWeight: 'bold', color: c.success },
+    primaryButton: { backgroundColor: c.primary, padding: 15, borderRadius: 10, alignItems: 'center' },
+    primaryButtonDisabled: { backgroundColor: c.primaryDisabledSoft },
+    primaryButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    secondaryButton: { backgroundColor: c.primarySoft, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
+    secondaryButtonText: { color: c.primary, fontWeight: '600' },
+  });
