@@ -26,7 +26,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { addToCart, getQuantity, itemCount, total } = useCart();
-  const { profile, isAdmin, signOut } = useAuth();
+  const { profile } = useAuth();
   const router = useRouter();
 
   const fetchProducts = useCallback(async () => {
@@ -52,14 +52,6 @@ export default function HomeScreen() {
       fetchProducts();
     }, [fetchProducts])
   );
-
-  async function handleSignOut() {
-    try {
-      await signOut();
-    } catch {
-      Alert.alert('Error', 'No se pudo cerrar sesión. Intentá de nuevo.');
-    }
-  }
 
   const renderProduct = ({ item }: { item: Product }) => {
     const inCart = getQuantity(item.id);
@@ -141,13 +133,6 @@ export default function HomeScreen() {
             </Text>
           </View>
         )}
-        <View style={styles.navRow}>
-          <NavButton label="Mis pedidos" onPress={() => router.push('/orders')} styles={styles} />
-          <NavButton label="Mi cuenta" onPress={() => router.push('/account')} styles={styles} />
-          {isAdmin && <NavButton label="Pedidos (admin)" onPress={() => router.push('/admin/orders')} styles={styles} />}
-          {isAdmin && <NavButton label="Productos (admin)" onPress={() => router.push('/admin/products')} styles={styles} />}
-          <NavButton label="Cerrar sesión" onPress={handleSignOut} danger styles={styles} />
-        </View>
       </View>
 
       <FlatList
@@ -172,26 +157,6 @@ export default function HomeScreen() {
   );
 }
 
-type Styles = ReturnType<typeof makeStyles>;
-
-function NavButton({
-  label,
-  onPress,
-  danger,
-  styles,
-}: {
-  label: string;
-  onPress: () => void;
-  danger?: boolean;
-  styles: Styles;
-}) {
-  return (
-    <TouchableOpacity style={[styles.navButton, danger && styles.navButtonDanger]} onPress={onPress}>
-      <Text style={[styles.navButtonText, danger && styles.navButtonTextDanger]}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
 const makeStyles = (c: Colors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.background },
@@ -203,11 +168,6 @@ const makeStyles = (c: Colors) =>
     greeting: { fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: c.text },
     cartSummary: { backgroundColor: c.successSoft, padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 },
     cartText: { color: c.successText, fontWeight: 'bold', fontSize: 15 },
-    navRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    navButton: { backgroundColor: c.primarySoft, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-    navButtonDanger: { backgroundColor: c.dangerSoft },
-    navButtonText: { color: c.primary, fontWeight: '600', fontSize: 13 },
-    navButtonTextDanger: { color: c.danger },
     list: { padding: 16 },
     card: {
       flexDirection: 'row',

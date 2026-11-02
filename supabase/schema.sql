@@ -285,3 +285,39 @@ GRANT EXECUTE ON FUNCTION public.place_order(JSONB) TO authenticated;
 -- -------------------------------------------------------------
 
 -- UPDATE public.profiles SET role = 'admin' WHERE email = 'TU_MAIL_ADMIN';
+
+
+-- -------------------------------------------------------------
+-- 8. STORAGE: imágenes de productos
+-- Bucket público para leer. Solo el admin puede subir, cambiar o borrar fotos.
+-- -------------------------------------------------------------
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('productos', 'productos', true)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Imágenes de productos visibles" ON storage.objects;
+DROP POLICY IF EXISTS "Admins suben imágenes de productos" ON storage.objects;
+DROP POLICY IF EXISTS "Admins actualizan imágenes de productos" ON storage.objects;
+DROP POLICY IF EXISTS "Admins eliminan imágenes de productos" ON storage.objects;
+
+CREATE POLICY "Imágenes de productos visibles" ON storage.objects
+  FOR SELECT USING (bucket_id = 'productos');
+CREATE POLICY "Admins suben imágenes de productos" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'productos' AND public.is_admin());
+CREATE POLICY "Admins actualizan imágenes de productos" ON storage.objects
+  FOR UPDATE USING (bucket_id = 'productos' AND public.is_admin());
+CREATE POLICY "Admins eliminan imágenes de productos" ON storage.objects
+  FOR DELETE USING (bucket_id = 'productos' AND public.is_admin());
+
+
+-- -------------------------------------------------------------
+-- 9. ELIMINAR PEDIDOS ENTREGADOS (solo admin)
+-- Los items del pedido se borran solos (ON DELETE CASCADE).
+-- -------------------------------------------------------------
+
+GRANT DELETE ON public.orders TO authenticated;
+
+DROP POLICY IF EXISTS "Admins eliminan pedidos entregados" ON public.orders;
+CREATE POLICY "Admins eliminan pedidos entregados" ON public.orders
+  FOR DELETE USING (public.is_admin() AND status = 'delivered');

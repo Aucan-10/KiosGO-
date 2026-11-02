@@ -1,9 +1,12 @@
 import { useColorScheme } from 'react-native';
 
-// Paleta de colores. Sigue el modo claro/oscuro del sistema (userInterfaceStyle: automatic).
+// Paleta de colores de la app (no cambia el tema del celular).
+// Sigue el modo claro/oscuro del sistema (userInterfaceStyle: automatic).
+// La versión oscura se aproxima a la captura del diseño: fondo casi negro, tarjetas grises,
+// precios verdes y botones celestes.
 export const lightColors = {
-  background: '#f5f5f5',
-  surface: '#ffffff',
+  background: '#F6EFDD',
+  surface: '#FCF8EE',
   border: '#eeeeee',
   inputBorder: '#cccccc',
   placeholderBg: '#eeeeee',
@@ -26,25 +29,25 @@ export const lightColors = {
 export type Colors = typeof lightColors;
 
 export const darkColors: Colors = {
-  background: '#121212',
-  surface: '#1E1E1E',
-  border: '#333333',
-  inputBorder: '#555555',
-  placeholderBg: '#2C2C2E',
-  text: '#F2F2F7',
-  textMuted: '#A1A1AA',
-  textFaint: '#8E8E93',
-  primary: '#0A84FF',
-  primarySoft: '#1C2F4A',
-  primaryDisabled: '#48484A',
-  primaryDisabledSoft: '#2C4A6B',
-  danger: '#FF453A',
-  dangerSoft: '#4A1F1D',
-  success: '#30D158',
-  successSoft: '#1B3A24',
-  successText: '#30D158',
-  warning: '#FFB340',
-  greenDisabled: '#2F5E3D',
+  background: '#141414',
+  surface: '#222222',
+  border: '#2E2E2E',
+  inputBorder: '#4A4A4A',
+  placeholderBg: '#2E2E2E',
+  text: '#FFFFFF',
+  textMuted: '#A3A3A3',
+  textFaint: '#8C8C8C',
+  primary: '#4DA3E0',
+  primarySoft: '#1F3440',
+  primaryDisabled: '#4A4A4A',
+  primaryDisabledSoft: '#3A5D6F',
+  danger: '#FF5A5A',
+  dangerSoft: '#3D2222',
+  success: '#3CCB6A',
+  successSoft: '#1B3626',
+  successText: '#3CCB6A',
+  warning: '#FFB84D',
+  greenDisabled: '#2A5A3A',
 };
 
 export function useColors(): Colors {

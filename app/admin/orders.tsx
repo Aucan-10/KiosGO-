@@ -73,6 +73,26 @@ export default function AdminOrdersScreen() {
     }
   }
 
+  // Solo se pueden eliminar pedidos entregados (la base también lo valida)
+  function confirmDelete(order: OrderRow) {
+    Alert.alert('Eliminar pedido', '¿Seguro que querés eliminar este pedido entregado? Se borra del historial.', [
+      { text: 'No', style: 'cancel' },
+      { text: 'Sí, eliminar', style: 'destructive', onPress: () => deleteOrder(order) },
+    ]);
+  }
+
+  async function deleteOrder(order: OrderRow) {
+    setUpdatingId(order.id);
+    const { error: deleteError } = await supabase.from('orders').delete().eq('id', order.id);
+    setUpdatingId(null);
+
+    if (deleteError) {
+      Alert.alert('Error', 'No se pudo eliminar el pedido.');
+      return;
+    }
+    setOrders((prev) => prev.filter((o) => o.id !== order.id));
+  }
+
   if (!isAdmin && !loading) {
     return (
       <View style={styles.center}>
@@ -123,6 +143,18 @@ export default function AdminOrdersScreen() {
                   </Text>
                 </TouchableOpacity>
               ))
+            )}
+          </View>
+        )}
+
+        {item.status === 'delivered' && (
+          <View style={styles.actions}>
+            {updatingId === item.id ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <TouchableOpacity style={[styles.actionButton, styles.actionDanger]} onPress={() => confirmDelete(item)}>
+                <Text style={[styles.actionText, styles.actionTextDanger]}>Eliminar pedido</Text>
+              </TouchableOpacity>
             )}
           </View>
         )}
