@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   Alert,
+  TextInput,
 } from 'react-native';
 import { Stack, useRouter, useFocusEffect } from 'expo-router';
 import { supabase } from '../lib/supabase';
@@ -17,14 +18,30 @@ import { useAuth } from '../context/AuthContext';
 import { Product, formatPrice } from '../lib/types';
 import { Colors, useColors } from '../lib/theme';
 
+// Pasa a minúsculas y quita tildes, para que "jamon" encuentre "Jamón"
+function normalizeText(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+}
+
 export default function HomeScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
 
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  // Filtra por nombre y descripción mientras el alumno escribe
+  const filteredProducts = useMemo(() => {
+    const term = normalizeText(query.trim());
+    if (!term) return products;
+    return products.filter((p) => normalizeText(`${p.name} ${p.description ?? ''}`).includes(term));
+  }, [products, query]);
   const { addToCart, getQuantity, itemCount, total } = useCart();
   const { profile } = useAuth();
   const router = useRouter();
@@ -135,8 +152,25 @@ export default function HomeScreen() {
         )}
       </View>
 
+      <View style={styles.searchRow}>
+        <TextInput
+          placeholder="Buscar productos..."
+          placeholderTextColor={colors.textFaint}
+          value={query}
+          onChangeText={setQuery}
+          style={styles.searchInput}
+          autoCorrect={false}
+          returnKeyType="search"
+        />
+        {!!query && (
+          <TouchableOpacity style={styles.clearButton} onPress={() => setQuery('')}>
+            <Text style={styles.clearText}>✕</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       <FlatList
-        data={products}
+        data={filteredProducts}
         keyExtractor={(item) => item.id}
         renderItem={renderProduct}
         contentContainerStyle={styles.list}
@@ -150,7 +184,12 @@ export default function HomeScreen() {
           />
         }
         ListEmptyComponent={
-          <Text style={styles.empty}>{error ?? 'No hay productos disponibles por ahora.'}</Text>
+          <Text style={styles.empty}>
+            {error ??
+              (query.trim()
+                ? `No encontramos productos para "${query.trim()}".`
+                : 'No hay productos disponibles por ahora.')}
+          </Text>
         }
       />
     </View>
@@ -168,6 +207,20 @@ const makeStyles = (c: Colors) =>
     greeting: { fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: c.text },
     cartSummary: { backgroundColor: c.successSoft, padding: 10, borderRadius: 8, alignItems: 'center', marginBottom: 8 },
     cartText: { color: c.successText, fontWeight: 'bold', fontSize: 15 },
+    searchRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12 },
+    searchInput: {
+      flex: 1,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      fontSize: 16,
+      color: c.text,
+    },
+    clearButton: { marginLeft: 8, paddingHorizontal: 10, paddingVertical: 8 },
+    clearText: { color: c.textMuted, fontSize: 16, fontWeight: '600' },
     list: { padding: 16 },
     card: {
       flexDirection: 'row',
@@ -177,7 +230,8 @@ const makeStyles = (c: Colors) =>
       overflow: 'hidden',
       elevation: 3,
     },
-    image: { width: 100, height: 110 },
+    // Sin altura fija: la foto se estira con la altura de la tarjeta
+    image: { width: 100, minHeight: 110 },
     imagePlaceholder: { backgroundColor: c.placeholderBg, justifyContent: 'center', alignItems: 'center' },
     imagePlaceholderText: { color: c.textFaint, fontSize: 12 },
     cardContent: { flex: 1, padding: 12, justifyContent: 'space-between' },

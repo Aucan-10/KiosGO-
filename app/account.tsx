@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { Colors, useColors } from '../lib/theme';
+import { translateAuthError } from '../lib/messages';
 
 const MIN_PASSWORD = 8;
 const MAX_NAME = 60;
@@ -62,7 +63,7 @@ export default function AccountScreen() {
     setSavingPassword(false);
 
     if (error) {
-      Alert.alert('Error', 'No se pudo cambiar la contraseña. Intentá de nuevo.');
+      Alert.alert('No se pudo cambiar la contraseña', translateAuthError(error.message));
       return;
     }
     setNewPassword('');

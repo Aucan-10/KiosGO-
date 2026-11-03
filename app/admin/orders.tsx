@@ -13,6 +13,8 @@ import {
   statusStyle,
 } from '../../lib/types';
 import { Colors, useColors } from '../../lib/theme';
+import { matchesSearch } from '../../lib/search';
+import SearchBar from '../../components/SearchBar';
 
 export default function AdminOrdersScreen() {
   const { isAdmin } = useAuth();
@@ -21,8 +23,26 @@ export default function AdminOrdersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  // Busca por cliente, email, estado o nombre de producto
+  const filteredOrders = useMemo(
+    () =>
+      orders.filter((o) =>
+        matchesSearch(
+          [
+            o.profiles?.full_name ?? '',
+            o.profiles?.email ?? '',
+            STATUS_LABELS[o.status],
+            ...o.order_items.map((i) => i.products?.name ?? ''),
+          ].join(' '),
+          query
+        )
+      ),
+    [orders, query]
+  );
 
   const fetchOrders = useCallback(async () => {
     setError(null);
@@ -165,8 +185,9 @@ export default function AdminOrdersScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Pedidos (admin)' }} />
+      <SearchBar value={query} onChangeText={setQuery} placeholder="Buscar por cliente, estado o producto..." />
       <FlatList
-        data={orders}
+        data={filteredOrders}
         keyExtractor={(item) => item.id}
         renderItem={renderOrder}
         contentContainerStyle={styles.list}
@@ -179,7 +200,11 @@ export default function AdminOrdersScreen() {
             }}
           />
         }
-        ListEmptyComponent={<Text style={styles.empty}>{error ?? 'No hay pedidos todavía.'}</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            {error ?? (query.trim() ? `No encontramos pedidos para "${query.trim()}".` : 'No hay pedidos todavía.')}
+          </Text>
+        }
       />
     </View>
   );

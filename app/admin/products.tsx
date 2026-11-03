@@ -5,14 +5,23 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Product, formatPrice } from '../../lib/types';
 import { Colors, useColors } from '../../lib/theme';
+import { matchesSearch } from '../../lib/search';
+import SearchBar from '../../components/SearchBar';
 
 export default function AdminProductsScreen() {
   const { isAdmin } = useAuth();
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState('');
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  // Busca por nombre o descripción del producto
+  const filteredProducts = useMemo(
+    () => products.filter((p) => matchesSearch(`${p.name} ${p.description ?? ''}`, query)),
+    [products, query]
+  );
 
   // Admin ve todos los productos (activos e inactivos) gracias a RLS
   const fetchProducts = useCallback(async () => {
@@ -94,12 +103,17 @@ export default function AdminProductsScreen() {
           ),
         }}
       />
+      <SearchBar value={query} onChangeText={setQuery} placeholder="Buscar producto..." />
       <FlatList
-        data={products}
+        data={filteredProducts}
         keyExtractor={(item) => item.id}
         renderItem={renderProduct}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<Text style={styles.empty}>No hay productos cargados.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            {query.trim() ? `No encontramos productos para "${query.trim()}".` : 'No hay productos cargados.'}
+          </Text>
+        }
       />
     </View>
   );

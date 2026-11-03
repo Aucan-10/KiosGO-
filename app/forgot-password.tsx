@@ -4,6 +4,7 @@ import { Stack, useRouter } from 'expo-router';
 import * as Linking from 'expo-linking';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { supabase } from '../lib/supabase';
+import { isValidEmail, translateAuthError } from '../lib/messages';
 import { Colors, useColors } from '../lib/theme';
 
 // En Expo Go, Linking.createURL devuelve kiosgo:// (el esquema del APK), que Expo Go no abre.
@@ -29,6 +30,10 @@ export default function ForgotPasswordScreen() {
       Alert.alert('Error', 'Ingresá tu email.');
       return;
     }
+    if (!isValidEmail(trimmed)) {
+      Alert.alert('Email no válido', 'Revisá que el email tenga el formato correcto, por ejemplo nombre@mail.com.');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -40,7 +45,7 @@ export default function ForgotPasswordScreen() {
 
       if (error) {
         // DEBUG: se muestra el mensaje real de Supabase (dejar mientras diagnosticamos)
-        Alert.alert('Error', `No pudimos enviar el correo: ${error.message}`);
+        Alert.alert('No se pudo enviar el correo', translateAuthError(error.message));
         return;
       }
 

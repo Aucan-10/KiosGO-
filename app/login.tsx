@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityInd
 import { supabase } from '../lib/supabase';
 import { useRouter } from 'expo-router';
 import { Colors, useColors } from '../lib/theme';
+import { isValidEmail, translateAuthError } from '../lib/messages';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -13,21 +14,30 @@ export default function LoginScreen() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   async function signInWithEmail() {
+    if (!email.trim() || !password) {
+      Alert.alert('Faltan datos', 'Ingresá tu email y tu contraseña.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      Alert.alert('Email no válido', 'Revisá que el email tenga el formato correcto, por ejemplo nombre@mail.com.');
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: email,
+        email: email.trim(),
         password: password,
       });
 
       if (error) {
-        Alert.alert('Error', error.message);
+        Alert.alert('No se pudo ingresar', translateAuthError(error.message));
       } else {
         // Si no hay error, vamos al Home
         router.replace('/');
       }
     } catch (e) {
-      Alert.alert('Error inesperado', 'Verifica tu conexión.');
+      Alert.alert('Error de conexión', 'Revisá tu internet e intentá de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -66,7 +76,7 @@ export default function LoginScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.push('/register')}>
-        <Text style={styles.linkText}>¿No tienes cuenta? Regístrate</Text>
+        <Text style={styles.linkText}>¿No tenés cuenta? Registrate</Text>
       </TouchableOpacity>
     </View>
   );

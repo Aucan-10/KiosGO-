@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityInd
 import { supabase } from '../lib/supabase';
 import { useRouter } from 'expo-router';
 import { Colors, useColors } from '../lib/theme';
+import { isValidEmail, translateAuthError, MAX_NAME_LENGTH, MIN_PASSWORD_LENGTH } from '../lib/messages';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
@@ -13,15 +14,32 @@ export default function RegisterScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
+  function validate(): string | null {
+    if (!name.trim()) return 'Ingresá tu nombre.';
+    if (name.trim().length > MAX_NAME_LENGTH) return `El nombre no puede superar los ${MAX_NAME_LENGTH} caracteres.`;
+    if (!email.trim()) return 'Ingresá tu email.';
+    if (!isValidEmail(email)) return 'El email no es válido. Por ejemplo: nombre@mail.com.';
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      return `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.`;
+    }
+    return null;
+  }
+
   async function signUpWithEmail() {
+    const problem = validate();
+    if (problem) {
+      Alert.alert('Revisá los datos', problem);
+      return;
+    }
+
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
-      email: email,
+      email: email.trim(),
       password: password,
       options: {
         // El rol NO se envía desde el cliente: el trigger de la base siempre asigna 'student'
         data: {
-          full_name: name,
+          full_name: name.trim(),
         },
       },
     });
@@ -29,14 +47,14 @@ export default function RegisterScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert('Error', error.message);
+      Alert.alert('No se pudo crear la cuenta', translateAuthError(error.message));
     } else {
       // Si desactivaste "Confirm Email" en Supabase, nos logueamos automáticamente
       // Si sigue activado, el usuario no podrá entrar hasta verificar su mail.
       if (data.session) {
         router.replace('/');
       } else {
-        Alert.alert('¡Éxito!', 'Cuenta creada. Ahora inicia sesión.');
+        Alert.alert('¡Listo!', 'Cuenta creada. Ahora iniciá sesión.');
         router.replace('/login');
       }
     }
@@ -44,15 +62,16 @@ export default function RegisterScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Crear Cuenta</Text>
-      <Text style={styles.subtitle}>Únete a KiosGo!</Text>
+      <Text style={styles.title}>Crear cuenta</Text>
+      <Text style={styles.subtitle}>Unite a KiosGo!</Text>
 
       <TextInput
-        placeholder="Nombre Completo"
+        placeholder="Nombre completo"
         placeholderTextColor={colors.textFaint}
         value={name}
         onChangeText={setName}
         style={styles.input}
+        maxLength={MAX_NAME_LENGTH}
       />
 
       <TextInput
@@ -66,7 +85,7 @@ export default function RegisterScreen() {
       />
 
       <TextInput
-        placeholder="Contraseña"
+        placeholder={`Contraseña (mínimo ${MIN_PASSWORD_LENGTH} caracteres)`}
         placeholderTextColor={colors.textFaint}
         value={password}
         onChangeText={setPassword}
@@ -79,7 +98,7 @@ export default function RegisterScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.back()}>
-        <Text style={styles.linkText}>Volver al Login</Text>
+        <Text style={styles.linkText}>Volver al login</Text>
       </TouchableOpacity>
     </View>
   );

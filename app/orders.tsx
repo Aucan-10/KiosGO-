@@ -4,14 +4,29 @@ import { Stack, useFocusEffect } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { OrderRow, STATUS_LABELS, formatDate, formatPrice, statusStyle } from '../lib/types';
 import { Colors, useColors } from '../lib/theme';
+import { matchesSearch } from '../lib/search';
+import SearchBar from '../components/SearchBar';
 
 export default function MyOrdersScreen() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  // Busca por nombre de producto o por estado del pedido
+  const filteredOrders = useMemo(
+    () =>
+      orders.filter((o) =>
+        matchesSearch(
+          [STATUS_LABELS[o.status], ...o.order_items.map((i) => i.products?.name ?? '')].join(' '),
+          query
+        )
+      ),
+    [orders, query]
+  );
 
   const fetchOrders = useCallback(async () => {
     setError(null);
@@ -63,8 +78,9 @@ export default function MyOrdersScreen() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Mis pedidos' }} />
+      <SearchBar value={query} onChangeText={setQuery} placeholder="Buscar por producto o estado..." />
       <FlatList
-        data={orders}
+        data={filteredOrders}
         keyExtractor={(item) => item.id}
         renderItem={renderOrder}
         contentContainerStyle={styles.list}
@@ -78,7 +94,10 @@ export default function MyOrdersScreen() {
           />
         }
         ListEmptyComponent={
-          <Text style={styles.empty}>{error ?? 'Todavía no hiciste pedidos.'}</Text>
+          <Text style={styles.empty}>
+            {error ??
+              (query.trim() ? `No encontramos pedidos para "${query.trim()}".` : 'Todavía no hiciste pedidos.')}
+          </Text>
         }
       />
     </View>

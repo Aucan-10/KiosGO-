@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityInd
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { Colors, useColors } from '../lib/theme';
+import { translateAuthError } from '../lib/messages';
 
 const MIN_LENGTH = 8;
 
@@ -52,7 +53,7 @@ export default function ResetPasswordScreen() {
     setSaving(false);
 
     if (error) {
-      Alert.alert('Error', 'No se pudo actualizar la contraseña. Pedí un enlace nuevo.');
+      Alert.alert('No se pudo cambiar la contraseña', translateAuthError(error.message));
       return;
     }
     Alert.alert('Listo', 'Tu contraseña fue actualizada.', [{ text: 'OK', onPress: () => router.replace('/') }]);

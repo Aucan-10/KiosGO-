@@ -124,7 +124,10 @@ export default function ProductFormScreen() {
     const stock = Number(form.stock);
 
     if (!form.name.trim()) next.name = 'El nombre es obligatorio.';
+    else if (form.name.trim().length > 60) next.name = 'El nombre no puede superar los 60 caracteres.';
+    if (form.description.trim().length > 300) next.description = 'La descripción no puede superar los 300 caracteres.';
     if (!form.price.trim() || Number.isNaN(price) || price <= 0) next.price = 'Ingresá un precio mayor a 0.';
+    else if (price > 1000000) next.price = 'El precio parece demasiado alto. Revisalo.';
     if (!Number.isInteger(stock) || stock < 0) next.stock = 'El stock debe ser un número entero, 0 o mayor.';
 
     setErrors(next);
@@ -215,7 +218,7 @@ export default function ProductFormScreen() {
         <TextInput style={styles.input} value={form.name} onChangeText={(v) => setForm({ ...form, name: v })} />
       </Field>
 
-      <Field label="Descripción" styles={styles}>
+      <Field label="Descripción" error={errors.description} styles={styles}>
         <TextInput
           style={[styles.input, styles.multiline]}
           value={form.description}
