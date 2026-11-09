@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityInd
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '../lib/supabase';
 import { Colors, useColors } from '../lib/theme';
+import FormScreen from '../components/FormScreen';
 import { translateAuthError } from '../lib/messages';
 
 const MIN_LENGTH = 8;
@@ -81,7 +82,7 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <FormScreen>
       <Stack.Screen options={{ title: 'Nueva contraseña' }} />
       <Text style={styles.title}>Creá tu nueva contraseña</Text>
 
@@ -105,7 +106,7 @@ export default function ResetPasswordScreen() {
       <TouchableOpacity style={styles.button} onPress={savePassword} disabled={saving}>
         {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.buttonText}>Guardar contraseña</Text>}
       </TouchableOpacity>
-    </View>
+    </FormScreen>
   );
 }
 

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityInd
 import { supabase } from '../lib/supabase';
 import { useRouter } from 'expo-router';
 import { Colors, useColors } from '../lib/theme';
+import FormScreen from '../components/FormScreen';
 import { isValidEmail, translateAuthError, MAX_NAME_LENGTH, MIN_PASSWORD_LENGTH } from '../lib/messages';
 
 export default function RegisterScreen() {
@@ -54,14 +55,18 @@ export default function RegisterScreen() {
       if (data.session) {
         router.replace('/');
       } else {
-        Alert.alert('¡Listo!', 'Cuenta creada. Ahora iniciá sesión.');
+        // Con "Confirm email" activado, Supabase envía un correo con el enlace de verificación
+        Alert.alert(
+          'Revisá tu email',
+          `Te enviamos un correo a ${email.trim()}. Abrilo y tocá el enlace para verificar tu cuenta. Después iniciá sesión.`
+        );
         router.replace('/login');
       }
     }
   }
 
   return (
-    <View style={styles.container}>
+    <FormScreen>
       <Text style={styles.title}>Crear cuenta</Text>
       <Text style={styles.subtitle}>Unite a KiosGo!</Text>
 
@@ -100,7 +105,7 @@ export default function RegisterScreen() {
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={styles.linkText}>Volver al login</Text>
       </TouchableOpacity>
-    </View>
+    </FormScreen>
   );
 }
 

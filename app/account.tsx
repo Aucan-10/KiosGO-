@@ -19,6 +19,8 @@ export default function AccountScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
+  // El kiosquero no cursa: el curso solo aplica a alumnos
+  const isAdmin = profile?.role === 'admin';
   const [name, setName] = useState('');
   const [curso, setCurso] = useState('');
   const [savingProfile, setSavingProfile] = useState(false);
@@ -117,7 +119,7 @@ export default function AccountScreen() {
     // RLS: solo se puede modificar el propio perfil; la base permite cambiar nombre, curso y foto
     const { error } = await supabase
       .from('profiles')
-      .update({ full_name: trimmed, curso: curso || null })
+      .update({ full_name: trimmed, curso: isAdmin ? null : curso || null })
       .eq('id', session.user.id);
     setSavingProfile(false);
 
@@ -219,6 +221,8 @@ export default function AccountScreen() {
         autoComplete="name"
       />
 
+      {!isAdmin && (
+        <>
       <Text style={styles.label}>Curso</Text>
       <View style={styles.chips}>
         {CURSOS.map((option) => {
@@ -237,6 +241,8 @@ export default function AccountScreen() {
           );
         })}
       </View>
+        </>
+      )}
 
       <TouchableOpacity
         style={[styles.button, savingProfile && styles.buttonDisabled]}

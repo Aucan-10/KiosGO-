@@ -6,6 +6,7 @@ import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { supabase } from '../lib/supabase';
 import { isValidEmail, translateAuthError } from '../lib/messages';
 import { Colors, useColors } from '../lib/theme';
+import FormScreen from '../components/FormScreen';
 
 // En Expo Go, Linking.createURL devuelve kiosgo:// (el esquema del APK), que Expo Go no abre.
 // Ahí armamos la URL exp:// con el host del servidor de desarrollo.
@@ -60,7 +61,7 @@ export default function ForgotPasswordScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <FormScreen>
       <Stack.Screen options={{ title: 'Recuperar contraseña' }} />
       <Text style={styles.title}>¿Olvidaste tu contraseña?</Text>
       <Text style={styles.subtitle}>Te enviamos un enlace para crear una nueva.</Text>
@@ -78,7 +79,7 @@ export default function ForgotPasswordScreen() {
       <TouchableOpacity style={styles.button} onPress={sendResetEmail} disabled={loading}>
         {loading ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.buttonText}>Enviar enlace</Text>}
       </TouchableOpacity>
-    </View>
+    </FormScreen>
   );
 }
 

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityInd
 import { supabase } from '../lib/supabase';
 import { useRouter } from 'expo-router';
 import { Colors, useColors } from '../lib/theme';
+import FormScreen from '../components/FormScreen';
 import { isValidEmail, translateAuthError } from '../lib/messages';
 
 export default function LoginScreen() {
@@ -45,7 +46,7 @@ export default function LoginScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <FormScreen>
       <Text style={styles.title}>KiosGo!</Text>
       <Text style={styles.subtitle}>Inicia sesión para pedir</Text>
 
@@ -98,7 +99,7 @@ export default function LoginScreen() {
       <TouchableOpacity onPress={() => router.push('/register')}>
         <Text style={styles.linkText}>¿No tenés cuenta? Registrate</Text>
       </TouchableOpacity>
-    </View>
+    </FormScreen>
   );
 }
 

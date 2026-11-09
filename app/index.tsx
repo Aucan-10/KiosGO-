@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
-  FlatList,
+  SectionList,
   Image,
   StyleSheet,
   ActivityIndicator,
@@ -18,10 +18,14 @@ import { useAuth } from '../context/AuthContext';
 import { Product, formatPrice } from '../lib/types';
 import { Colors, useColors } from '../lib/theme';
 import { normalizeText } from '../lib/search';
+import AddToCartButton from '../components/AddToCartButton';
 
+
+// Producto del menú con el nombre de su categoría ("Otros" si no tiene)
+type MenuProduct = Product & { categoryName: string };
 
 export default function HomeScreen() {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<MenuProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,11 +34,21 @@ export default function HomeScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
-  // Filtra por nombre y descripción mientras el alumno escribe
-  const filteredProducts = useMemo(() => {
+  // Filtra por nombre y descripción mientras el alumno escribe, y agrupa por categoría
+  const sections = useMemo(() => {
     const term = normalizeText(query.trim());
-    if (!term) return products;
-    return products.filter((p) => normalizeText(`${p.name} ${p.description ?? ''}`).includes(term));
+    const matching = term
+      ? products.filter((p) => normalizeText(`${p.name} ${p.description ?? ''}`).includes(term))
+      : products;
+    const groups = new Map<string, MenuProduct[]>();
+    for (const p of matching) {
+      const list = groups.get(p.categoryName) ?? [];
+      list.push(p);
+      groups.set(p.categoryName, list);
+    }
+    return Array.from(groups.entries())
+      .sort(([a], [b]) => (a === 'Otros' ? 1 : b === 'Otros' ? -1 : a.localeCompare(b, 'es')))
+      .map(([title, data]) => ({ title, data }));
   }, [products, query]);
   const { addToCart, getQuantity, itemCount, total } = useCart();
   const { profile } = useAuth();
@@ -44,14 +58,21 @@ export default function HomeScreen() {
     setError(null);
     const { data, error: fetchError } = await supabase
       .from('products')
-      .select('id, name, description, price, image_url, stock, is_active')
+      .select('id, name, description, price, image_url, stock, is_active, categories(name)')
       .eq('is_active', true)
       .order('name', { ascending: true });
 
     if (fetchError) {
       setError('No pudimos cargar el menú. Revisá tu conexión e intentá de nuevo.');
     } else {
-      setProducts((data ?? []).map((p) => ({ ...p, price: Number(p.price) })));
+      setProducts(
+        (data ?? []).map((p) => {
+          // La relación puede venir como objeto o como lista según la consulta
+          const cat = p.categories as { name: string } | { name: string }[] | null;
+          const categoryName = (Array.isArray(cat) ? cat[0]?.name : cat?.name) || 'Otros';
+          return { ...p, price: Number(p.price), categoryName };
+        })
+      );
     }
     setLoading(false);
     setRefreshing(false);
@@ -90,10 +111,11 @@ export default function HomeScreen() {
           </Text>
           <View style={styles.row}>
             <Text style={styles.price}>{formatPrice(item.price)}</Text>
-            <TouchableOpacity
-              style={[styles.addButton, (outOfStock || maxReached) && styles.addButtonDisabled]}
+            <AddToCartButton
+              name={item.name}
               disabled={outOfStock || maxReached}
-              onPress={() =>
+              maxReached={maxReached}
+              onAdd={() =>
                 addToCart({
                   id: item.id,
                   name: item.name,
@@ -102,11 +124,7 @@ export default function HomeScreen() {
                   stock: item.stock,
                 })
               }
-            >
-              <Text style={styles.addButtonText}>
-                {maxReached && !outOfStock ? 'Máximo' : '+ Agregar'}
-              </Text>
-            </TouchableOpacity>
+            />
           </View>
         </View>
       </View>
@@ -172,10 +190,15 @@ export default function HomeScreen() {
         <Text style={styles.recommendText}>✨ ¿No sabés qué pedir? Pedí una recomendación</Text>
       </TouchableOpacity>
 
-      <FlatList
-        data={filteredProducts}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
         renderItem={renderProduct}
+        renderSectionHeader={({ section }) => (
+          <Text style={styles.sectionHeader} accessibilityRole="header">
+            {section.title}
+          </Text>
+        )}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl
@@ -238,6 +261,7 @@ const makeStyles = (c: Colors) =>
     },
     recommendText: { color: c.primary, fontWeight: '600', fontSize: 14, textAlign: 'center' },
     list: { padding: 16 },
+    sectionHeader: { fontSize: 18, fontWeight: 'bold', color: c.text, marginTop: 4, marginBottom: 10 },
     card: {
       flexDirection: 'row',
       backgroundColor: c.surface,

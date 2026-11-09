@@ -25,9 +25,20 @@ type FormState = {
   stock: string;
   image_url: string;
   is_active: boolean;
+  category_id: string; // '' = sin categoría
 };
 
-const EMPTY_FORM: FormState = { name: '', description: '', price: '', stock: '0', image_url: '', is_active: true };
+type Category = { id: string; name: string };
+
+const EMPTY_FORM: FormState = {
+  name: '',
+  description: '',
+  price: '',
+  stock: '0',
+  image_url: '',
+  is_active: true,
+  category_id: '',
+};
 const IMAGES_BUCKET = 'productos';
 
 // Pantalla de alta (id = "nuevo") y edición (id = uuid) de productos
@@ -44,12 +55,23 @@ export default function ProductFormScreen() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [creatingCategory, setCreatingCategory] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from('categories')
+      .select('id, name')
+      .order('name', { ascending: true })
+      .then(({ data }) => setCategories(data ?? []));
+  }, []);
 
   useEffect(() => {
     if (isNew) return;
     supabase
       .from('products')
-      .select('name, description, price, stock, image_url, is_active')
+      .select('name, description, price, stock, image_url, is_active, category_id')
       .eq('id', id)
       .single()
       .then(({ data, error }) => {
@@ -65,6 +87,7 @@ export default function ProductFormScreen() {
           stock: String(data.stock ?? 0),
           image_url: data.image_url ?? '',
           is_active: data.is_active ?? true,
+          category_id: data.category_id ?? '',
         });
         setLoading(false);
       });
@@ -105,6 +128,23 @@ export default function ProductFormScreen() {
     }
   }
 
+  // Crea una categoría nueva y la deja seleccionada en el formulario
+  async function createCategory() {
+    const name = newCategory.trim();
+    if (!name) return;
+    setCreatingCategory(true);
+    const { data, error } = await supabase.from('categories').insert({ name }).select('id, name').single();
+    setCreatingCategory(false);
+
+    if (error || !data) {
+      Alert.alert('No se pudo crear la categoría', error?.message ?? 'Intentá de nuevo.');
+      return;
+    }
+    setCategories((prev) => [...prev, data].sort((a, b) => a.name.localeCompare(b.name, 'es')));
+    setForm((prev) => ({ ...prev, category_id: data.id }));
+    setNewCategory('');
+  }
+
   function validate(): boolean {
     const next: typeof errors = {};
     const price = Number(form.price.replace(',', '.'));
@@ -132,6 +172,7 @@ export default function ProductFormScreen() {
       stock: Number(form.stock),
       image_url: form.image_url.trim() || null,
       is_active: form.is_active,
+      category_id: form.category_id || null,
     };
 
     try {
@@ -212,6 +253,59 @@ export default function ProductFormScreen() {
           onChangeText={(v) => setForm({ ...form, description: v })}
           multiline
         />
+      </Field>
+
+      <Field label="Categoría" styles={styles}>
+        <View style={styles.chips}>
+          <TouchableOpacity
+            style={[styles.chip, !form.category_id && styles.chipSelected]}
+            onPress={() => setForm({ ...form, category_id: '' })}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: !form.category_id }}
+            accessibilityLabel="Sin categoría"
+          >
+            <Text style={[styles.chipText, !form.category_id && styles.chipTextSelected]}>Sin categoría</Text>
+          </TouchableOpacity>
+          {categories.map((cat) => {
+            const selected = form.category_id === cat.id;
+            return (
+              <TouchableOpacity
+                key={cat.id}
+                style={[styles.chip, selected && styles.chipSelected]}
+                onPress={() => setForm({ ...form, category_id: cat.id })}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: selected }}
+                accessibilityLabel={`Categoría ${cat.name}`}
+              >
+                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{cat.name}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        <View style={styles.newCategoryRow}>
+          <TextInput
+            style={[styles.input, styles.newCategoryInput]}
+            value={newCategory}
+            onChangeText={setNewCategory}
+            placeholder="Nueva categoría (ej: Salados)"
+            placeholderTextColor={colors.textFaint}
+            maxLength={40}
+            accessibilityLabel="Nombre de la nueva categoría"
+          />
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={createCategory}
+            disabled={creatingCategory || !newCategory.trim()}
+            accessibilityRole="button"
+            accessibilityLabel="Crear categoría"
+          >
+            {creatingCategory ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <Text style={styles.secondaryButtonText}>Crear</Text>
+            )}
+          </TouchableOpacity>
+        </View>
       </Field>
 
       <Field label="Precio *" error={errors.price} styles={styles}>
@@ -304,6 +398,13 @@ const makeStyles = (c: Colors) =>
     label: { fontSize: 14, fontWeight: '600', marginBottom: 6, color: c.text },
     input: { borderWidth: 1, borderColor: c.inputBorder, padding: 12, borderRadius: 10, fontSize: 16, color: c.text },
     multiline: { minHeight: 80, textAlignVertical: 'top' },
+    chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
+    chip: { borderWidth: 1, borderColor: c.inputBorder, borderRadius: 20, paddingHorizontal: 14, minHeight: 44, justifyContent: 'center' },
+    chipSelected: { backgroundColor: c.primary, borderColor: c.primary },
+    chipText: { color: c.text, fontSize: 15 },
+    chipTextSelected: { color: c.onPrimary, fontWeight: '700' },
+    newCategoryRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+    newCategoryInput: { flex: 1, marginBottom: 0 },
     error: { color: c.danger, marginTop: 4, fontSize: 13 },
     preview: { width: 160, height: 160, borderRadius: 12, marginBottom: 10 },
     previewEmpty: { backgroundColor: c.placeholderBg, justifyContent: 'center', alignItems: 'center' },

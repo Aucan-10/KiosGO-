@@ -14,11 +14,14 @@ import { supabase } from '../lib/supabase';
 import { useCart } from '../context/CartContext';
 import { Product, formatPrice } from '../lib/types';
 import { Colors, useColors } from '../lib/theme';
+import AddToCartButton from '../components/AddToCartButton';
 
 const MAX_PEDIDO = 200;
 
 type Recomendacion = { id: string; motivo: string };
+type Accion = { tipo: 'agregar' | 'quitar'; id: string; cantidad: number };
 type Sugerencia = { product: Product; motivo: string };
+type RespuestaAsistente = { mensaje?: string; recomendaciones?: Recomendacion[]; acciones?: Accion[] };
 
 // Si la función devolvió un mensaje claro (ej. sesión vencida), se muestra; si no, uno genérico
 async function errorMessage(error: unknown): Promise<string> {
@@ -32,16 +35,19 @@ async function errorMessage(error: unknown): Promise<string> {
   return 'No pudimos obtener recomendaciones. Revisá tu conexión e intentá de nuevo.';
 }
 
-export default function RecomendadorScreen() {
+export default function AsistenteScreen() {
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const { addToCart, getQuantity } = useCart();
+  const { addToCart, changeQuantity, getQuantity, items } = useCart();
 
   const [menu, setMenu] = useState<Product[]>([]);
   const [pedido, setPedido] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mensaje, setMensaje] = useState<string | null>(null);
   const [sugerencias, setSugerencias] = useState<Sugerencia[] | null>(null);
+  const [acciones, setAcciones] = useState<Accion[] | null>(null);
+  const [aplicado, setAplicado] = useState<string | null>(null);
 
   // Menú para mostrar precio, foto y stock de cada sugerencia
   useEffect(() => {
@@ -54,20 +60,29 @@ export default function RecomendadorScreen() {
       });
   }, []);
 
+  function nombreDe(id: string): string {
+    return menu.find((p) => p.id === id)?.name ?? items.find((i) => i.id === id)?.name ?? 'producto';
+  }
+
   async function pedirRecomendacion() {
     const texto = pedido.trim();
     if (!texto) {
-      setError('Escribí qué te gustaría comer.');
+      setError('Escribí qué te gustaría comer o qué querés cambiar en tu carrito.');
       return;
     }
 
     setLoading(true);
     setError(null);
+    setMensaje(null);
     setSugerencias(null);
+    setAcciones(null);
+    setAplicado(null);
 
-    const { data, error: invokeError } = await supabase.functions.invoke<{
-      recomendaciones: Recomendacion[];
-    }>('recomendar', { body: { pedido: texto } });
+    // El asistente ve el carrito actual para poder proponer cambios sobre él
+    const carrito = items.map((i) => ({ id: i.id, nombre: i.name, cantidad: i.quantity }));
+    const { data, error: invokeError } = await supabase.functions.invoke<RespuestaAsistente>('recomendar', {
+      body: { pedido: texto, carrito },
+    });
 
     setLoading(false);
 
@@ -83,23 +98,51 @@ export default function RecomendadorScreen() {
         return product ? { product, motivo: r.motivo } : null;
       })
       .filter((s): s is Sugerencia => s !== null);
+    const acc = data?.acciones ?? [];
 
-    if (lista.length === 0) {
+    if (!data?.mensaje && lista.length === 0 && acc.length === 0) {
       setError('No encontramos algo que combine con eso. Probá con otra descripción.');
       return;
     }
-    setSugerencias(lista);
+    setMensaje(data?.mensaje || null);
+    setSugerencias(lista.length > 0 ? lista : null);
+    setAcciones(acc.length > 0 ? acc : null);
+  }
+
+  // Nada cambia en el carrito hasta que el alumno toca "Aplicar cambios"
+  function aplicarCambios() {
+    if (!acciones) return;
+    for (const a of acciones) {
+      if (a.tipo === 'agregar') {
+        const product = menu.find((p) => p.id === a.id);
+        if (!product) continue;
+        for (let i = 0; i < a.cantidad; i++) {
+          addToCart({
+            id: product.id,
+            name: product.name,
+            price: product.price,
+            image_url: product.image_url,
+            stock: product.stock,
+          });
+        }
+      } else {
+        changeQuantity(a.id, -a.cantidad);
+      }
+    }
+    setAcciones(null);
+    setAplicado('Listo, tu carrito ya está actualizado.');
   }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Stack.Screen options={{ title: 'Recomendador' }} />
+      <Stack.Screen options={{ title: 'Asistente' }} />
 
       <Text style={styles.intro}>
-        Contanos qué tenés ganas de comer (algo salado, dulce, liviano, barato...) y te sugerimos productos del menú.
+        Contanos qué tenés ganas de comer (algo salado, dulce, liviano, barato...) o qué querés cambiar en tu carrito
+        (ej: "sacá las papas", "agregá algo dulce").
       </Text>
 
-      <Text style={styles.label} accessibilityRole="text">¿Qué te gustaría comer?</Text>
+      <Text style={styles.label} accessibilityRole="text">¿Qué necesitás?</Text>
       <TextInput
         value={pedido}
         onChangeText={setPedido}
@@ -108,8 +151,8 @@ export default function RecomendadorScreen() {
         placeholderTextColor={colors.textFaint}
         multiline
         maxLength={MAX_PEDIDO}
-        accessibilityLabel="¿Qué te gustaría comer?"
-        accessibilityHint="Escribí en pocas palabras lo que querés comer"
+        accessibilityLabel="¿Qué necesitás?"
+        accessibilityHint="Escribí en pocas palabras lo que querés comer o cambiar en el carrito"
       />
       <Text style={styles.counter}>
         {pedido.length}/{MAX_PEDIDO}
@@ -120,18 +163,45 @@ export default function RecomendadorScreen() {
         onPress={pedirRecomendacion}
         disabled={loading}
         accessibilityRole="button"
-        accessibilityLabel="Pedir recomendación"
+        accessibilityLabel="Consultar al asistente"
       >
-        {loading ? (
-          <ActivityIndicator color={colors.onPrimary} />
-        ) : (
-          <Text style={styles.buttonText}>Recomendame</Text>
-        )}
+        {loading ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.buttonText}>Consultar</Text>}
       </TouchableOpacity>
 
       {!!error && (
         <Text style={styles.error} accessibilityLiveRegion="polite">
           {error}
+        </Text>
+      )}
+
+      {!!mensaje && (
+        <Text style={styles.mensaje} accessibilityLiveRegion="polite">
+          {mensaje}
+        </Text>
+      )}
+
+      {!!acciones && (
+        <View style={styles.accionesBox}>
+          <Text style={styles.accionesTitle}>El asistente propone cambiar tu carrito:</Text>
+          {acciones.map((a, index) => (
+            <Text key={`${a.tipo}-${a.id}-${index}`} style={styles.accionText}>
+              {a.tipo === 'agregar' ? '+ Agregar' : '− Quitar'} {a.cantidad} × {nombreDe(a.id)}
+            </Text>
+          ))}
+          <TouchableOpacity
+            style={styles.applyButton}
+            onPress={aplicarCambios}
+            accessibilityRole="button"
+            accessibilityLabel="Aplicar cambios al carrito"
+          >
+            <Text style={styles.buttonText}>Aplicar cambios</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {!!aplicado && (
+        <Text style={styles.aplicado} accessibilityLiveRegion="polite">
+          {aplicado}
         </Text>
       )}
 
@@ -157,10 +227,11 @@ export default function RecomendadorScreen() {
               <Text style={styles.motivo}>{motivo}</Text>
               <View style={styles.row}>
                 <Text style={styles.price}>{formatPrice(product.price)}</Text>
-                <TouchableOpacity
-                  style={[styles.addButton, (outOfStock || maxReached) && styles.addButtonDisabled]}
+                <AddToCartButton
+                  name={product.name}
                   disabled={outOfStock || maxReached}
-                  onPress={() =>
+                  maxReached={maxReached}
+                  onAdd={() =>
                     addToCart({
                       id: product.id,
                       name: product.name,
@@ -169,11 +240,7 @@ export default function RecomendadorScreen() {
                       stock: product.stock,
                     })
                   }
-                  accessibilityRole="button"
-                  accessibilityLabel={`Agregar ${product.name} al carrito`}
-                >
-                  <Text style={styles.addButtonText}>{maxReached && !outOfStock ? 'Máximo' : '+ Agregar'}</Text>
-                </TouchableOpacity>
+                />
               </View>
             </View>
           </View>
@@ -217,6 +284,32 @@ const makeStyles = (c: Colors) =>
     buttonDisabled: { backgroundColor: c.primaryDisabled },
     buttonText: { color: c.onPrimary, fontWeight: 'bold', fontSize: 16 },
     error: { color: c.danger, fontSize: 14, marginBottom: 16 },
+    mensaje: { color: c.text, fontSize: 15, lineHeight: 22, marginBottom: 14 },
+    accionesBox: {
+      backgroundColor: c.primarySoft,
+      borderRadius: 10,
+      padding: 14,
+      marginBottom: 16,
+    },
+    accionesTitle: { color: c.text, fontWeight: '600', fontSize: 14, marginBottom: 8 },
+    accionText: { color: c.text, fontSize: 15, marginBottom: 4 },
+    applyButton: {
+      backgroundColor: c.primary,
+      minHeight: 48,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 10,
+    },
+    aplicado: {
+      backgroundColor: c.successSoft,
+      color: c.successText,
+      fontWeight: '600',
+      padding: 10,
+      borderRadius: 8,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
     card: {
       flexDirection: 'row',
       backgroundColor: c.surface,
@@ -233,14 +326,5 @@ const makeStyles = (c: Colors) =>
     motivo: { fontSize: 13, color: c.textMuted, marginBottom: 8 },
     row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     price: { fontSize: 17, fontWeight: 'bold', color: c.success },
-    addButton: {
-      backgroundColor: c.primary,
-      minHeight: 40,
-      paddingHorizontal: 12,
-      borderRadius: 8,
-      justifyContent: 'center',
-    },
-    addButtonDisabled: { backgroundColor: c.primaryDisabled },
-    addButtonText: { color: c.onPrimary, fontWeight: 'bold', fontSize: 14 },
     disclaimer: { fontSize: 12, color: c.textFaint, marginTop: 20, textAlign: 'center', lineHeight: 18 },
   });
