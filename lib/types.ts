@@ -42,7 +42,12 @@ export type OrderRow = {
   total_amount: number;
   status: OrderStatus;
   created_at: string;
-  profiles?: { full_name: string | null; email: string } | null;
+  profiles?: {
+    full_name: string | null;
+    email: string;
+    curso: string | null;
+    avatar_path: string | null;
+  } | null;
   order_items: OrderItemRow[];
 };
 

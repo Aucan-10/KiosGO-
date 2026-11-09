@@ -42,7 +42,7 @@ export default function CartScreen() {
   const renderItem = ({ item }: { item: CartItem }) => (
     <View style={styles.card}>
       {item.image_url ? (
-        <Image source={{ uri: item.image_url }} style={styles.image} />
+        <Image source={{ uri: item.image_url }} style={styles.image} accessibilityLabel={`Foto de ${item.name}`} />
       ) : (
         <View style={[styles.image, styles.imagePlaceholder]} />
       )}
@@ -100,7 +100,7 @@ export default function CartScreen() {
               disabled={submitting}
             >
               {submitting ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={colors.onPrimary} />
               ) : (
                 <Text style={styles.primaryButtonText}>Reservar pedido</Text>
               )}
@@ -141,7 +141,7 @@ const makeStyles = (c: Colors) =>
       justifyContent: 'center',
     },
     qtyButtonDisabled: { backgroundColor: c.primaryDisabled },
-    qtyButtonText: { color: '#fff', fontSize: 18, fontWeight: 'bold', lineHeight: 20 },
+    qtyButtonText: { color: c.onPrimary, fontSize: 18, fontWeight: 'bold', lineHeight: 20 },
     qty: { marginHorizontal: 12, fontSize: 16, fontWeight: '600', color: c.text },
     remove: { color: c.danger, marginTop: 6, fontSize: 13 },
     lineTotal: { fontWeight: 'bold', fontSize: 15, marginLeft: 8, color: c.text },
@@ -151,7 +151,7 @@ const makeStyles = (c: Colors) =>
     totalValue: { fontSize: 18, fontWeight: 'bold', color: c.success },
     primaryButton: { backgroundColor: c.primary, padding: 15, borderRadius: 10, alignItems: 'center' },
     primaryButtonDisabled: { backgroundColor: c.primaryDisabledSoft },
-    primaryButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    primaryButtonText: { color: c.onPrimary, fontWeight: 'bold', fontSize: 16 },
     secondaryButton: { backgroundColor: c.primarySoft, paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8 },
     secondaryButtonText: { color: c.primary, fontWeight: '600' },
   });

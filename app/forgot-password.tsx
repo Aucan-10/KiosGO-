@@ -39,12 +39,9 @@ export default function ForgotPasswordScreen() {
     try {
       // En el APK: kiosgo://reset-password. En Expo Go: exp://<host>/--/reset-password.
       const redirectTo = getRedirectUrl();
-      // DEBUG: revisar en la terminal de Expo qué redirect se envía (quitar después)
-      console.log('[DEBUG] redirectTo para recuperación:', redirectTo);
       const { error } = await supabase.auth.resetPasswordForEmail(trimmed, { redirectTo });
 
       if (error) {
-        // DEBUG: se muestra el mensaje real de Supabase (dejar mientras diagnosticamos)
         Alert.alert('No se pudo enviar el correo', translateAuthError(error.message));
         return;
       }
@@ -79,7 +76,7 @@ export default function ForgotPasswordScreen() {
       />
 
       <TouchableOpacity style={styles.button} onPress={sendResetEmail} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Enviar enlace</Text>}
+        {loading ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.buttonText}>Enviar enlace</Text>}
       </TouchableOpacity>
     </View>
   );
@@ -100,5 +97,5 @@ const makeStyles = (c: Colors) =>
       color: c.text,
     },
     button: { backgroundColor: c.primary, padding: 15, borderRadius: 10, alignItems: 'center' },
-    buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    buttonText: { color: c.onPrimary, fontWeight: 'bold', fontSize: 16 },
   });

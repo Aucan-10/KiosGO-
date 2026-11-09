@@ -15,6 +15,7 @@ import {
 import { Colors, useColors } from '../../lib/theme';
 import { matchesSearch } from '../../lib/search';
 import SearchBar from '../../components/SearchBar';
+import Avatar from '../../components/Avatar';
 
 export default function AdminOrdersScreen() {
   const { isAdmin } = useAuth();
@@ -35,6 +36,7 @@ export default function AdminOrdersScreen() {
           [
             o.profiles?.full_name ?? '',
             o.profiles?.email ?? '',
+            o.profiles?.curso ?? '',
             STATUS_LABELS[o.status],
             ...o.order_items.map((i) => i.products?.name ?? ''),
           ].join(' '),
@@ -50,7 +52,7 @@ export default function AdminOrdersScreen() {
     const { data, error: fetchError } = await supabase
       .from('orders')
       .select(
-        'id, total_amount, status, created_at, profiles(full_name, email), order_items(quantity, unit_price, products(name))'
+        'id, total_amount, status, created_at, profiles(full_name, email, curso, avatar_path), order_items(quantity, unit_price, products(name))'
       )
       .order('created_at', { ascending: true });
 
@@ -136,7 +138,15 @@ export default function AdminOrdersScreen() {
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.customer}>{item.profiles?.full_name || item.profiles?.email || 'Alumno'}</Text>
+          <View style={styles.customerRow}>
+            <Avatar path={item.profiles?.avatar_path} name={item.profiles?.full_name || item.profiles?.email} size={40} />
+            <View style={styles.customerText}>
+              <Text style={styles.customer} numberOfLines={1}>
+                {item.profiles?.full_name || item.profiles?.email || 'Alumno'}
+              </Text>
+              {!!item.profiles?.curso && <Text style={styles.curso}>{item.profiles.curso}</Text>}
+            </View>
+          </View>
           <Text style={[styles.status, statusStyle(item.status, colors)]}>{STATUS_LABELS[item.status]}</Text>
         </View>
         <Text style={styles.date}>{formatDate(item.created_at)}</Text>
@@ -216,8 +226,11 @@ const makeStyles = (c: Colors) =>
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20, backgroundColor: c.background },
     list: { padding: 16 },
     card: { backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 12, elevation: 2 },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-    customer: { fontWeight: 'bold', fontSize: 15, flexShrink: 1, color: c.text },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
+    customerRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 },
+    customerText: { flexShrink: 1 },
+    customer: { fontWeight: 'bold', fontSize: 15, color: c.text },
+    curso: { fontSize: 12, color: c.textMuted, marginTop: 2 },
     status: { fontWeight: 'bold', fontSize: 13 },
     date: { color: c.textMuted, fontSize: 12, marginBottom: 6 },
     line: { fontSize: 14, marginBottom: 2, color: c.text },
@@ -232,7 +245,7 @@ const makeStyles = (c: Colors) =>
     },
     actionButton: { backgroundColor: c.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
     actionDanger: { backgroundColor: c.dangerSoft },
-    actionText: { color: '#fff', fontWeight: '600', fontSize: 13 },
+    actionText: { color: c.onPrimary, fontWeight: '600', fontSize: 13 },
     actionTextDanger: { color: c.danger },
     empty: { textAlign: 'center', marginTop: 40, color: c.textFaint, fontSize: 16 },
   });

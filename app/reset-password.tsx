@@ -103,7 +103,7 @@ export default function ResetPasswordScreen() {
       />
 
       <TouchableOpacity style={styles.button} onPress={savePassword} disabled={saving}>
-        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Guardar contraseña</Text>}
+        {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.buttonText}>Guardar contraseña</Text>}
       </TouchableOpacity>
     </View>
   );
@@ -125,6 +125,6 @@ const makeStyles = (c: Colors) =>
       color: c.text,
     },
     button: { backgroundColor: c.primary, padding: 15, borderRadius: 10, alignItems: 'center' },
-    buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    buttonText: { color: c.onPrimary, fontWeight: 'bold', fontSize: 16 },
     linkText: { color: c.primary, textAlign: 'center', marginTop: 10, fontSize: 16 },
   });

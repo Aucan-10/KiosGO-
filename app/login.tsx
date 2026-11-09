@@ -8,6 +8,7 @@ import { isValidEmail, translateAuthError } from '../lib/messages';
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const colors = useColors();
@@ -56,6 +57,8 @@ export default function LoginScreen() {
         style={styles.input}
         autoCapitalize="none"
         keyboardType="email-address"
+        autoComplete="email"
+        accessibilityLabel="Email"
       />
 
       <TextInput
@@ -64,11 +67,28 @@ export default function LoginScreen() {
         value={password}
         onChangeText={setPassword}
         style={styles.input}
-        secureTextEntry
+        secureTextEntry={!showPassword}
+        autoComplete="password"
+        accessibilityLabel="Contraseña"
       />
+      <TouchableOpacity
+        style={styles.toggle}
+        onPress={() => setShowPassword((v) => !v)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked: showPassword }}
+        accessibilityLabel="Mostrar contraseña"
+      >
+        <Text style={styles.toggleText}>{showPassword ? '☑' : '☐'} Mostrar contraseña</Text>
+      </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={signInWithEmail} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Ingresar</Text>}
+      <TouchableOpacity
+        style={styles.button}
+        onPress={signInWithEmail}
+        disabled={loading}
+        accessibilityRole="button"
+        accessibilityLabel="Ingresar"
+      >
+        {loading ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.buttonText}>Ingresar</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.push('/forgot-password')}>
@@ -97,6 +117,8 @@ const makeStyles = (c: Colors) =>
       color: c.text,
     },
     button: { backgroundColor: c.primary, padding: 15, borderRadius: 10, alignItems: 'center' },
-    buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    buttonText: { color: c.onPrimary, fontWeight: 'bold', fontSize: 16 },
     linkText: { color: c.primary, textAlign: 'center', marginTop: 20, fontSize: 16 },
+    toggle: { minHeight: 48, justifyContent: 'center', marginBottom: 10 },
+    toggleText: { color: c.text, fontSize: 15 },
   });

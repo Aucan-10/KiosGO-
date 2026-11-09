@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../context/AuthContext';
 import { Colors, useColors } from '../../lib/theme';
+import { base64ToArrayBuffer } from '../../lib/images';
 
 type FormState = {
   name: string;
@@ -28,16 +29,6 @@ type FormState = {
 
 const EMPTY_FORM: FormState = { name: '', description: '', price: '', stock: '0', image_url: '', is_active: true };
 const IMAGES_BUCKET = 'productos';
-
-// Convierte la imagen en base64 (como la devuelve el selector) a bytes para subirla
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
-  const binary = atob(base64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes.buffer;
-}
 
 // Pantalla de alta (id = "nuevo") y edición (id = uuid) de productos
 export default function ProductFormScreen() {
@@ -99,8 +90,6 @@ export default function ProductFormScreen() {
     try {
       if (!asset.base64) throw new Error('No se pudo leer la imagen seleccionada.');
       const bytes = base64ToArrayBuffer(asset.base64);
-      // DEBUG: tamaño real del archivo a subir (quitar después)
-      console.log('[DEBUG] bytes a subir:', bytes.byteLength);
       const { error: uploadError } = await supabase.storage
         .from(IMAGES_BUCKET)
         .upload(path, bytes, { contentType: mimeType });
@@ -109,8 +98,6 @@ export default function ProductFormScreen() {
       const { data } = supabase.storage.from(IMAGES_BUCKET).getPublicUrl(path);
       setForm((prev) => ({ ...prev, image_url: data.publicUrl }));
     } catch (e) {
-      // DEBUG: mostrar el error real mientras diagnosticamos la subida (quitar después)
-      console.log('[DEBUG] error al subir imagen:', e);
       const message = (e as { message?: string })?.message ?? JSON.stringify(e);
       Alert.alert('Error al subir la imagen', message);
     } finally {
@@ -273,7 +260,7 @@ export default function ProductFormScreen() {
       </View>
 
       <TouchableOpacity style={[styles.saveButton, saving && styles.saveButtonDisabled]} onPress={save} disabled={saving}>
-        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>Guardar</Text>}
+        {saving ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.saveText}>Guardar</Text>}
       </TouchableOpacity>
 
       {!isNew && (
@@ -338,7 +325,7 @@ const makeStyles = (c: Colors) =>
     },
     saveButton: { backgroundColor: c.success, padding: 15, borderRadius: 10, alignItems: 'center' },
     saveButtonDisabled: { backgroundColor: c.greenDisabled },
-    saveText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    saveText: { color: c.onPrimary, fontWeight: 'bold', fontSize: 16 },
     deleteButton: { marginTop: 12, padding: 15, borderRadius: 10, alignItems: 'center', backgroundColor: c.dangerSoft },
     deleteText: { color: c.danger, fontWeight: 'bold', fontSize: 16 },
   });

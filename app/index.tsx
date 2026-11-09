@@ -17,14 +17,8 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { Product, formatPrice } from '../lib/types';
 import { Colors, useColors } from '../lib/theme';
+import { normalizeText } from '../lib/search';
 
-// Pasa a minúsculas y quita tildes, para que "jamon" encuentre "Jamón"
-function normalizeText(text: string): string {
-  return text
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase();
-}
 
 export default function HomeScreen() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -78,7 +72,7 @@ export default function HomeScreen() {
     return (
       <View style={styles.card}>
         {item.image_url ? (
-          <Image source={{ uri: item.image_url }} style={styles.image} />
+          <Image source={{ uri: item.image_url }} style={styles.image} accessibilityLabel={`Foto de ${item.name}`} />
         ) : (
           <View style={[styles.image, styles.imagePlaceholder]}>
             <Text style={styles.imagePlaceholderText}>Sin imagen</Text>
@@ -169,6 +163,15 @@ export default function HomeScreen() {
         )}
       </View>
 
+      <TouchableOpacity
+        style={styles.recommendButton}
+        onPress={() => router.push('/recomendador')}
+        accessibilityRole="button"
+        accessibilityLabel="Pedir una recomendación de productos"
+      >
+        <Text style={styles.recommendText}>✨ ¿No sabés qué pedir? Pedí una recomendación</Text>
+      </TouchableOpacity>
+
       <FlatList
         data={filteredProducts}
         keyExtractor={(item) => item.id}
@@ -221,6 +224,19 @@ const makeStyles = (c: Colors) =>
     },
     clearButton: { marginLeft: 8, paddingHorizontal: 10, paddingVertical: 8 },
     clearText: { color: c.textMuted, fontSize: 16, fontWeight: '600' },
+    recommendButton: {
+      marginHorizontal: 16,
+      marginTop: 10,
+      minHeight: 48,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: c.primary,
+      backgroundColor: c.primarySoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 12,
+    },
+    recommendText: { color: c.primary, fontWeight: '600', fontSize: 14, textAlign: 'center' },
     list: { padding: 16 },
     card: {
       flexDirection: 'row',
@@ -243,6 +259,6 @@ const makeStyles = (c: Colors) =>
     price: { fontSize: 18, fontWeight: 'bold', color: c.success },
     addButton: { backgroundColor: c.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
     addButtonDisabled: { backgroundColor: c.primaryDisabled },
-    addButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+    addButtonText: { color: c.onPrimary, fontWeight: 'bold', fontSize: 14 },
     empty: { textAlign: 'center', marginTop: 40, color: c.textFaint, fontSize: 16, paddingHorizontal: 20 },
   });

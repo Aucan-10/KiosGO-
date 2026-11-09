@@ -5,20 +5,28 @@ import { ActivityIndicator, View, StyleSheet, PanResponder } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
 import { CartProvider, useCart } from '../context/CartContext';
-import { useColors } from '../lib/theme';
+import { ThemeProvider, useColors, useThemeSettings } from '../lib/theme';
 import BottomBar, { TAB_PATHS, getTabs } from '../components/BottomBar';
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <AuthGate>
-          <AppShell />
-        </AuthGate>
-        <StatusBar style="auto" />
-      </CartProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <AuthGate>
+            <AppShell />
+          </AuthGate>
+          <ThemedStatusBar />
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
+}
+
+// La barra de estado del celular (hora, batería) sigue la apariencia elegida en la app
+function ThemedStatusBar() {
+  const { isDark } = useThemeSettings();
+  return <StatusBar style={isDark ? 'light' : 'dark'} />;
 }
 
 // Pantallas del stack, barra inferior y gesto de deslizar entre las secciones principales

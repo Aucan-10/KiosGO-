@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   full_name TEXT,
+  curso TEXT,
+  avatar_path TEXT,
   role TEXT DEFAULT 'student' CHECK (role IN ('student', 'admin')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -259,9 +261,9 @@ GRANT SELECT ON public.profiles TO authenticated;
 GRANT SELECT, UPDATE ON public.orders TO authenticated;
 GRANT SELECT ON public.order_items TO authenticated;
 
--- Nadie cambia su propio rol: el usuario solo puede editar su nombre
+-- Nadie cambia su propio rol: el usuario solo puede editar su nombre, curso y foto
 REVOKE UPDATE ON public.profiles FROM authenticated;
-GRANT UPDATE (full_name) ON public.profiles TO authenticated;
+GRANT UPDATE (full_name, curso, avatar_path) ON public.profiles TO authenticated;
 
 -- place_order: solo usuarios logueados
 REVOKE ALL ON FUNCTION public.place_order(JSONB) FROM PUBLIC, anon;
@@ -321,3 +323,37 @@ GRANT DELETE ON public.orders TO authenticated;
 DROP POLICY IF EXISTS "Admins eliminan pedidos entregados" ON public.orders;
 CREATE POLICY "Admins eliminan pedidos entregados" ON public.orders
   FOR DELETE USING (public.is_admin() AND status = 'delivered');
+
+
+-- -------------------------------------------------------------
+-- 10. STORAGE: fotos de perfil (bucket privado)
+-- Cada alumno sube y borra solo dentro de su carpeta (su id).
+-- Ven la foto el propio alumno y el admin, con URL temporal.
+-- -------------------------------------------------------------
+
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('avatares', 'avatares', false)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Ver fotos de perfil propias o ser admin" ON storage.objects;
+DROP POLICY IF EXISTS "Usuarios suben su propia foto" ON storage.objects;
+DROP POLICY IF EXISTS "Usuarios actualizan su propia foto" ON storage.objects;
+DROP POLICY IF EXISTS "Usuarios eliminan su propia foto" ON storage.objects;
+
+CREATE POLICY "Ver fotos de perfil propias o ser admin" ON storage.objects
+  FOR SELECT USING (
+    bucket_id = 'avatares'
+    AND ((storage.foldername(name))[1] = auth.uid()::text OR public.is_admin())
+  );
+CREATE POLICY "Usuarios suben su propia foto" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'avatares' AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+CREATE POLICY "Usuarios actualizan su propia foto" ON storage.objects
+  FOR UPDATE USING (
+    bucket_id = 'avatares' AND (storage.foldername(name))[1] = auth.uid()::text
+  );
+CREATE POLICY "Usuarios eliminan su propia foto" ON storage.objects
+  FOR DELETE USING (
+    bucket_id = 'avatares' AND (storage.foldername(name))[1] = auth.uid()::text
+  );

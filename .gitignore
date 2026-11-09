@@ -40,6 +40,9 @@ yarn-error.*
 /ios
 /android
 
+# archivos comprimidos locales (no son parte del código)
+KiosGO.zip
+
 # secrets (never commit)
 .env.*
 !.env.example

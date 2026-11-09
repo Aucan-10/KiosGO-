@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 import { OrderRow, STATUS_LABELS, formatDate, formatPrice, statusStyle } from '../lib/types';
 import { Colors, useColors } from '../lib/theme';
 import { matchesSearch } from '../lib/search';
@@ -15,6 +16,8 @@ export default function MyOrdersScreen() {
   const [query, setQuery] = useState('');
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { session } = useAuth();
+  const userId = session?.user.id;
 
   // Busca por nombre de producto o por estado del pedido
   const filteredOrders = useMemo(
@@ -30,10 +33,17 @@ export default function MyOrdersScreen() {
 
   const fetchOrders = useCallback(async () => {
     setError(null);
-    // RLS: el alumno solo recibe sus propios pedidos
+    if (!userId) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+    // Filtro explícito por usuario: el admin puede ver todos los pedidos por RLS,
+    // pero en esta pantalla solo deben aparecer los propios
     const { data, error: fetchError } = await supabase
       .from('orders')
       .select('id, total_amount, status, created_at, order_items(quantity, unit_price, products(name))')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (fetchError) {
@@ -43,7 +53,7 @@ export default function MyOrdersScreen() {
     }
     setLoading(false);
     setRefreshing(false);
-  }, []);
+  }, [userId]);
 
   useFocusEffect(
     useCallback(() => {

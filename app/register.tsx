@@ -94,7 +94,7 @@ export default function RegisterScreen() {
       />
 
       <TouchableOpacity style={styles.button} onPress={signUpWithEmail} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Registrarse</Text>}
+        {loading ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.buttonText}>Registrarse</Text>}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => router.back()}>
@@ -125,6 +125,6 @@ const makeStyles = (c: Colors) =>
       alignItems: 'center',
       marginTop: 10,
     },
-    buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+    buttonText: { color: c.onPrimary, fontWeight: 'bold', fontSize: 16 },
     linkText: { color: c.primary, textAlign: 'center', marginTop: 20, fontSize: 16 },
   });
