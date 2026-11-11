@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { supabase } from '../lib/supabase';
 import { useRouter } from 'expo-router';
 import { Colors, useColors } from '../lib/theme';
 import FormScreen from '../components/FormScreen';
 import { isValidEmail, translateAuthError } from '../lib/messages';
+import { getRedirectUrl } from '../lib/redirect';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -14,6 +16,45 @@ export default function LoginScreen() {
   const router = useRouter();
   const colors = useColors();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+
+  // Abre el login de Google en el navegador de la app y canjea el código que vuelve por una sesión (PKCE)
+  async function signInWithGoogle() {
+    setLoading(true);
+    try {
+      const redirectTo = getRedirectUrl('auth-callback');
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if (error || !data.url) {
+        Alert.alert('No se pudo ingresar con Google', error ? translateAuthError(error.message) : 'Intentá de nuevo.');
+        return;
+      }
+
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      // Si el alumno cerró la ventana o canceló, no mostramos error
+      if (result.type !== 'success') return;
+
+      const callbackUrl = new URL(result.url);
+      const oauthError = callbackUrl.searchParams.get('error_description') ?? callbackUrl.searchParams.get('error');
+      const code = callbackUrl.searchParams.get('code');
+      if (oauthError || !code) {
+        Alert.alert('No se pudo ingresar con Google', oauthError ?? 'Intentá de nuevo.');
+        return;
+      }
+
+      const { error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+      if (sessionError) {
+        Alert.alert('No se pudo ingresar con Google', translateAuthError(sessionError.message));
+        return;
+      }
+      router.replace('/');
+    } catch (e) {
+      Alert.alert('Error de conexión', 'Revisá tu internet e intentá de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function signInWithEmail() {
     if (!email.trim() || !password) {
@@ -92,6 +133,18 @@ export default function LoginScreen() {
         {loading ? <ActivityIndicator color={colors.onPrimary} /> : <Text style={styles.buttonText}>Ingresar</Text>}
       </TouchableOpacity>
 
+      <Text style={styles.orText}>o</Text>
+
+      <TouchableOpacity
+        style={styles.googleButton}
+        onPress={signInWithGoogle}
+        disabled={loading}
+        accessibilityRole="button"
+        accessibilityLabel="Ingresar con Google"
+      >
+        <Text style={styles.googleText}>Continuar con Google</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity onPress={() => router.push('/forgot-password')}>
         <Text style={styles.linkText}>¿Olvidaste tu contraseña?</Text>
       </TouchableOpacity>
@@ -118,6 +171,16 @@ const makeStyles = (c: Colors) =>
       color: c.text,
     },
     button: { backgroundColor: c.primary, padding: 15, borderRadius: 10, alignItems: 'center' },
+    orText: { textAlign: 'center', color: c.textFaint, marginVertical: 12, fontSize: 14 },
+    googleButton: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      backgroundColor: c.surface,
+      padding: 15,
+      borderRadius: 10,
+      alignItems: 'center',
+    },
+    googleText: { color: c.text, fontWeight: '600', fontSize: 16 },
     buttonText: { color: c.onPrimary, fontWeight: 'bold', fontSize: 16 },
     linkText: { color: c.primary, textAlign: 'center', marginTop: 20, fontSize: 16 },
     toggle: { minHeight: 48, justifyContent: 'center', marginBottom: 10 },
