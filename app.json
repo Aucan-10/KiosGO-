@@ -25,6 +25,16 @@
       "expo-status-bar",
       "expo-web-browser"
     ],
-    "scheme": "kiosgo"
+    "scheme": "kiosgo",
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "0fe273a0-4f17-43f1-9d5c-d17b04208756"
+      }
+    }
   }
 }
