@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="KiosGo! es una app para pedir comida del kiosco de la escuela antes del recreo, sin hacer fila." />
+  <title>KiosGo! | Pedí tu kiosco antes del recreo</title>
+  <link rel="icon" href="assets/favicon.png" />
+  <style>
+    :root {
+      --bg: #F6EFDD;
+      --surface: #FCF8EE;
+      --primary: #0060C0;
+      --on-primary: #FFFFFF;
+      --text: #222222;
+      --muted: #666666;
+      --border: #D9CFB8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    header, section, footer { padding: 56px 24px; }
+    .wrap { max-width: 920px; margin: 0 auto; }
+
+    .hero { text-align: center; padding-top: 72px; }
+    .hero img { width: 120px; height: 120px; border-radius: 24px; margin-bottom: 20px; }
+    .hero h1 { font-size: 2.6rem; color: var(--primary); margin-bottom: 12px; }
+    .hero p.lead { font-size: 1.2rem; color: var(--text); max-width: 620px; margin: 0 auto 28px; }
+
+    .btn {
+      display: inline-block;
+      background: var(--primary);
+      color: var(--on-primary);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 1.05rem;
+      padding: 14px 28px;
+      border-radius: 12px;
+    }
+    .btn:focus-visible { outline: 3px solid var(--text); outline-offset: 3px; }
+    .btn-note { display: block; margin-top: 12px; color: var(--muted); font-size: 0.9rem; }
+
+    h2 { font-size: 1.7rem; color: var(--primary); margin-bottom: 20px; text-align: center; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+    }
+    .card h3 { font-size: 1.1rem; margin-bottom: 8px; }
+    .card p { color: var(--muted); font-size: 0.97rem; }
+
+    .steps { counter-reset: paso; list-style: none; max-width: 620px; margin: 0 auto; }
+    .steps li {
+      counter-increment: paso;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px 18px 64px;
+      margin-bottom: 14px;
+      position: relative;
+    }
+    .steps li::before {
+      content: counter(paso);
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: var(--on-primary);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .download { background: var(--surface); border-top: 1px solid var(--border); text-align: center; }
+    .download p { color: var(--muted); max-width: 560px; margin: 0 auto 24px; }
+
+    footer { text-align: center; color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="wrap">
+      <img src="assets/icon.png" alt="Logo de KiosGo" />
+      <h1>KiosGo!</h1>
+      <p class="lead">Pedí tu comida del kiosco de la escuela desde el celular y retirala sin hacer fila.</p>
+      <a class="btn" href="APK_URL_AQUI" download>Descargar app para Android</a>
+      <span class="btn-note">Archivo APK · Android</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="wrap">
+      <h2>¿Qué es KiosGo?</h2>
+      <div class="grid">
+        <div class="card">
+          <h3>Pedido anticipado</h3>
+          <p>Armás tu pedido desde el celular antes del recreo y lo recogés en el kiosco cuando te toca.</p>
+        </div>
+        <div class="card">
+          <h3>Menú ordenado</h3>
+          <p>Los productos están agrupados por categoría, con precio y stock disponible.</p>
+        </div>
+        <div class="card">
+          <h3>Asistente de compra</h3>
+          <p>Un asistente te ayuda a elegir productos y puede agregarlos o quitarlos de tu carrito si se lo pedís.</p>
+        </div>
+        <div class="card">
+          <h3>Cuenta segura</h3>
+          <p>Registrate con tu email o ingresá con Google, con verificación de correo y cambio de contraseña.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <h2>Cómo funciona</h2>
+      <ol class="steps">
+        <li>Ingresá con tu cuenta o creá una nueva.</li>
+        <li>Elegí productos del menú y agregalos al carrito.</li>
+        <li>Confirmá tu pedido antes del horario del recreo.</li>
+        <li>Retirá tu pedido en el kiosco.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="download">
+    <div class="wrap">
+      <h2>Descargá la app</h2>
+      <p>Instalá KiosGo! en tu celular Android descargando el archivo APK. Si el celular pide permiso para instalar apps de origen desconocido, aceptalo solo para esta instalación.</p>
+      <a class="btn" href="https://expo.dev/accounts/aucan/projects/KiosGO-App/builds/9202f77a-b06f-486f-8e36-6c36e86f183c" download>Descargar APK</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <p>KiosGo! · Proyecto final de Construcción de Software · EPET 30 · San Martín de los Andes</p>
+    </div>
+  </footer>
+
+</body>
+</html>
