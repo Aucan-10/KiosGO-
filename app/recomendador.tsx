@@ -104,30 +104,41 @@ export default function AsistenteScreen() {
       setError('No encontramos algo que combine con eso. Probá con otra descripción.');
       return;
     }
+    // Los "agregar" se aplican solos; los "quitar" quedan esperando confirmación
+    const agregar = acc.filter((a) => a.tipo === 'agregar');
+    const quitar = acc.filter((a) => a.tipo === 'quitar');
+    aplicarAgregados(agregar);
+
     setMensaje(data?.mensaje || null);
     setSugerencias(lista.length > 0 ? lista : null);
-    setAcciones(acc.length > 0 ? acc : null);
+    setAcciones(quitar.length > 0 ? quitar : null);
+    if (agregar.length > 0) {
+      setAplicado(`Agregué al carrito: ${agregar.map((a) => `${a.cantidad} × ${nombreDe(a.id)}`).join(', ')}.`);
+    }
   }
 
-  // Nada cambia en el carrito hasta que el alumno toca "Aplicar cambios"
+  // Suma al carrito los productos que el alumno pidió; no pide confirmación
+  function aplicarAgregados(lista: Accion[]) {
+    for (const a of lista) {
+      const product = menu.find((p) => p.id === a.id);
+      if (!product) continue;
+      for (let i = 0; i < a.cantidad; i++) {
+        addToCart({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          image_url: product.image_url,
+          stock: product.stock,
+        });
+      }
+    }
+  }
+
+  // Quitar sí espera confirmación: el alumno toca "Aplicar cambios"
   function aplicarCambios() {
     if (!acciones) return;
     for (const a of acciones) {
-      if (a.tipo === 'agregar') {
-        const product = menu.find((p) => p.id === a.id);
-        if (!product) continue;
-        for (let i = 0; i < a.cantidad; i++) {
-          addToCart({
-            id: product.id,
-            name: product.name,
-            price: product.price,
-            image_url: product.image_url,
-            stock: product.stock,
-          });
-        }
-      } else {
-        changeQuantity(a.id, -a.cantidad);
-      }
+      changeQuantity(a.id, -a.cantidad);
     }
     setAcciones(null);
     setAplicado('Listo, tu carrito ya está actualizado.');
@@ -182,7 +193,7 @@ export default function AsistenteScreen() {
 
       {!!acciones && (
         <View style={styles.accionesBox}>
-          <Text style={styles.accionesTitle}>El asistente propone cambiar tu carrito:</Text>
+          <Text style={styles.accionesTitle}>El asistente propone quitar del carrito:</Text>
           {acciones.map((a, index) => (
             <Text key={`${a.tipo}-${a.id}-${index}`} style={styles.accionText}>
               {a.tipo === 'agregar' ? '+ Agregar' : '− Quitar'} {a.cantidad} × {nombreDe(a.id)}
